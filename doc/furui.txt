@@ -1,0 +1,18 @@
+--------------------------------------------------------------------
+1.北京赋睿智能科技：2018-05-16
+
+2.技术要求：
+    pl/sql
+    存储过程
+    触发器
+    mysql
+    oracle
+    tomcat
+    jboss
+
+    struts
+    spring
+    hibernte
+    mybatis
+
+    swing-gui开发

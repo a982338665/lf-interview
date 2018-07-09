@@ -1,0 +1,21 @@
+-------------------------------------------------------------
+1.久康国际：
+
+2.技术要求：
+    ssh
+    ssm
+    数据结构+常用算法
+
+    soa架构：dubbo
+    微服务架构：
+       springboot
+       springcloud
+
+    mysql
+    mongodb
+    redis
+    memcache
+
+    git
+    maven
+    linux基本操作

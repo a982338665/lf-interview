@@ -1,0 +1,44 @@
+------------------------------------------------------------------------------------------
+1.Spring事务管理：
+    1.事物的使用
+        ·@Transactional--可定义在类上
+        ·统一配置事务管理器（tx:）
+    2.事物的传播行为：@Transactional(propagation=Propagation.(...))
+        ·required:          有事物加入，没有新建
+        ·not_supported:     为此方法不开启事务
+        ·requires_new:      不管原来是否有事物，都新建事物并先执行，完毕后再执行老事物
+        ·mandatory：        必须在已有事物中执行，否则抛出异常
+        ·never：            必须在没有事物中执行，否则抛出异常
+        ·supports：         其他bean掉此方法，若其有事物，则此有事物，反之亦然
+    3.超时时间：@Transactional(timeout=30) 默认30秒
+    4.错误回滚：
+        ·spring管理器并不会回滚所有异常：遇到需要捕获的异常不会回滚(throws new Exception("回滚"))
+        ·想所有异常都回滚：@Transactional(rollbackFor=Exception.class)
+    5.事物的隔离级别：
+        ·读未提交：读到未提交数据(不可重复读/脏读)--基本不使用
+        ·读已提交：读已提交数据(不可重复读/幻读)
+            -不可重复读：同一事物，多次读取同一数据，返回结果不同
+            -幻读：一个事物读到另一个事物已提交的insert数据
+        ·可重复读：可重复读(幻读)
+        ·序列化：串行化
+        mysql默认：可重复读
+        sqlserver:读已提交
+——————————————————————————
+2.hibernate和mybatis的比较：orm框架
+    ·sql封装：
+        hibernate对sql进行完整封装，是程序员专注于业务
+        mybatis：sql-mapping映射
+    ·sql优化：
+        hibernate：会查询全部字段，可优化，但会破坏其简洁性
+        mybatis：优化方便
+    ·数据库移植性：
+        hibernate：使用hql语句，与具体使用的数据库无关，可移植性较好
+        mybatis：sql自写，移植性差
+    ·缓存支持：
+        hibernate：一级缓存：session 二级缓存sessionFactory
+        mybatis：二级缓存
+    ·自定义orm框架：类的属性名注解+反射+模板模式+自定义数据库连接池
+ ——————————————————————————
+3.structs2和springmvc比较：
+    ·structs2：类级别拦截--action级别--一个类对应一个request上下文
+    ·springmvc：方法级别上的拦截--一个方法对应一个request上下文

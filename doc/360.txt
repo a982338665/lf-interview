@@ -17,3 +17,5 @@
 3.用程序对文件内容进行数据统计
 
 
+
+4.select s.userid from User group by orderNum order by count(orderNum) desc limit 10;

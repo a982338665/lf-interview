@@ -402,3 +402,36 @@
                  public void testChild(String str){
                     dao.testChild(str);
                  }
+
+## 9 spring-mvc解决post请求中文乱码问题
+    
+    1.类：CharacterEncodingFilter
+        String encoding;
+        boolean forceEncoding = false
+    2.原理：
+        HttpServletRequest      request.setCharacterEncoding(this.encoding)
+        HttpServletResponse     response.setCharacterEncoding(this.encoding)
+        FilterChain             filterChain.doFilter(request,response)
+    3.配置：
+        1.web.xml
+            <filter>
+                <filter-name>CharacterEcondingFilter</filter-name>
+                <filter-class>org.springfarmework.web.filter.CharacterEcondingFilter</filter-class>
+                <init-param>
+                    <param-name>encoding</param-name>
+                    <param-value>UTF-8</param-value>
+                </init-param>
+                <init-param>
+                    <param-name>forceEncoding</param-name>
+                    <param-value>true</param-value>
+                </init-param>
+            </filter>
+            <!-- 拦截所有请求 -->
+            <filter-mapping>
+                <filter-name>CharacterEcondingFilter</filter-name>
+                <url-pattern>/*</url-pattern>
+            </filter-mapping>
+    4.以上方式只能解决 POST请求乱码，无法解决GET
+        1.解决get问题：
+                找到tomcat中的 server.xml修改：
+                    <Connector URIEncoding="UTF-8" ... ><Connector>

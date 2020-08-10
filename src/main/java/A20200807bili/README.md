@@ -444,7 +444,7 @@
             public ModelAndView test(){
                 //1.创建ModelAndView对象
                 ModelAndView mav = new ModelAndView();
-                //2.设置模型数据，最终会放到request域中
+                //2.设置模型数据，最终会放到request域中;
                 mav.addObject("user","admin");
                 //3.设置视图
                 mav.setViewName("success")
@@ -463,4 +463,27 @@
             }
         3.前端：request域中用户：${requestScope.user}
     
-## 11 
+## 11 mybatis中实体类和表名中的 字段名称不一致怎么办？
+    
+    1.ResultMap 设置映射关系
+    2.写sql起别名
+    3.默认驼峰命名
+    
+## 12 linux常用命令
+    
+## 13 git分支相关命令
+    
+    1.创建分支：
+        git branch 分支名
+        git branch -v 查看分支
+    2.切换分支：
+        git checkout 分支名
+    3.创建并切换分支：
+        git checkout -b 分支名
+    4.合并分支：
+        切换回主分支：git checkout master
+        合并到之分支：git merge 分支名
+    5.删除分支：
+        先切换到主干：git checkout master
+        git branch -D 分支名
+    6.git工作流：看图

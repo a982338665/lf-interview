@@ -435,3 +435,32 @@
         1.解决get问题：
                 找到tomcat中的 server.xml修改：
                     <Connector URIEncoding="UTF-8" ... ><Connector>
+
+## 10 spring-mvc 的工作流程
+    
+    1.使用方式：
+        1.返回ModelAndView
+            @RequestMapping("/test")
+            public ModelAndView test(){
+                //1.创建ModelAndView对象
+                ModelAndView mav = new ModelAndView();
+                //2.设置模型数据，最终会放到request域中
+                mav.addObject("user","admin");
+                //3.设置视图
+                mav.setViewName("success")
+            }
+        2.返回String:
+            /**
+             * 在方法的入参中传入Map，Model，ModelMap
+             * 不管将处理方法的返回值设置为ModelAndView还是方法在方法中传入Map，Model，ModelMap
+             * SpringMVC都会转化为一个ModelAndViewView对象
+             */
+            @RequestMapping("/test")
+            public String test(Map<String,Object> map){
+                //向Map中添加模型数据，最终会自动放到request域中
+                map.put("user","admin");
+                return "success";
+            }
+        3.前端：request域中用户：${requestScope.user}
+    
+## 11 

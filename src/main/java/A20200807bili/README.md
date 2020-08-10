@@ -538,7 +538,7 @@
         3.where条件中用不到的字段
         4.过滤性不好的不适合索引：例如性别字段
 
-## 15 JVM垃圾回收机制
+## 15 JVM垃圾回收机制：详情查看：https://github.com/a982338665/lf-mkd-java-core-high-level.git
 
     0.运行时数据区
         ·方法区

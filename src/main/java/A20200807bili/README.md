@@ -233,4 +233,172 @@
         ·实例变量：需要等待垃圾回收
         ·类变量：随着类的初始化而初始化，随类的卸载而消亡，该类所有的类变量都是共享的
         
+## 7 spring Bean作用域的区别
     
+    1.简介：
+        ·scope：在Spring中，可以在<bean>元素的scope属性里设置bean的作用域，以决定这个bean是单实例还是多实例的
+        ·scope默认作用域：Singleton，默认情况下，Spring只为每个在IOC容器里声明的bean创建唯一一个实例，整个IOC容器范围内都能共享该实例
+            所有后续的getBean()调用和bean引用都将返回这个唯一的bean实例，该作用域被称为singeton，他是所有Bean的默认作用域
+    2.作用域分类：
+        ·singleton  在springIOC容器中仅存在一个bean实例，以单实例方式存在
+        ·prototype  每次调用getBean()d都会返回一个新实例Bean
+        ·request    每次http请求都会创建一个新的bean，该作用域仅适用于WebApplicationContext环境
+        ·session    同一个http Session共享一个bean，不同的使用不同的bean，该作用域仅适用于WebApplicationContext环境
+
+## 8 spring支持的常用数据库事务传播属性和事务的隔离级别？
+    
+    1.Spring事务：
+        什么是事务：
+        事务逻辑上的一组对数据对操作，组成这些操作的各个逻辑单元，要么一起成功，要么一起失败。
+    2.事务特性（4种）：ACID
+        原子性（atomicity）：强调事务的不可分割；
+        一致性（consistency）：事务的执行前后数据的完整性保持一致；
+        隔离性（isolation）：一个事务的执行的过程中，不应该受到其他事务的干扰；
+        持久性（durability）：事务一旦结束，数据就持久到数据库。
+    3.事务的传播行为：
+        当一个事务方法被另一个事务方法调用时，必须指定事务该如何传播。
+        例如，方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。
+        事务的传播行可以由传播属性指定，spring指定了七种传播属性。
+    4.设置方式： 
+        传播行为设置：@Transactional(propagation = Propagation.REQUIRED)
+        隔离级别设置：@Transactional(isolation = Isolation.REPEATABLE_READ)
+            常用：
+               propagation:
+                    Propagation.REQUIRED：
+                    Propagation.REQUIRES_NEW：
+               isolation:
+                    Isolation.REPEATABLE_READ:可重复读，mysql默认的隔离级别
+                    Isolation.READ_COMMITTED:读已提交，oracle默认隔离级别，开发时常用的隔离级别
+    5.7种传播行为：
+        *保证同一个事务中
+            REQUIRED支持当前事务，如果不存在，就新建一个（默认）
+            SUPPORTS支持当前事务，如果不存在，就不适用事务
+            MANDATORY 支持当前事务，如果不存在，抛出异常
+        *保证没有在同一个事务中
+            REQUIRES_NEW如果有事务存在，挂起当前事务，创建一个新的事务
+            NOT_SUPPORTED 以非事务方式运行，如果有事务存在，挂起当前事务
+            NEVER 以非事务方式运行，如果有事务存在，抛出异常
+            NESTED 如果当前事务存在，则嵌套事务执行
+    6.示例：-使用默认传播行为
+        controller：
+            service.test(list);
+        service:
+            @Transactional
+            public void test(List<String> list){
+                for(String str : list){
+                    //调用子service
+                    serviceChild.testChild(str);
+                }
+            }
+        serviceChild：//此处使用默认传播行为
+             @Transactional
+             public void testChild(String str){
+                dao.testChild(str);
+             }
+        结论：
+            ·结果：若for循环中的任意一个失败，则整体失败
+            ·原因：默认REQUIRED，支持当前事务，即for循环中所有内容都仅支持当前事务（for循环所在方法）
+    7.示例：-使用REQUIRED_NEW传播行为,开启新事物
+        controller：
+            service.test(list);
+        service:
+            @Transactional
+            public void test(List<String> list){
+                for(String str : list){
+                    //调用子service
+                    serviceChild.testChild(str);
+                }
+            }
+        serviceChild：
+             @Transactional(propagation = Propagation.REQUIRES_NEW)
+             public void testChild(String str){
+                dao.testChild(str);
+             }
+        结论：
+            ·结果：若for循环中的每一个方法都会开启一个独立的事务，即该成功的成功，该失败的失败，事务之间相互隔离
+            ·原因：REQUIRES_NEW,挂起当前事务，开启新事务
+    8.数据库事务并发的问题：事务 t1 和 事务 t2
+        ·脏读：一个事务读取到了另一个事务的更新，但是还未提交的数据（A读到了B未提交的事物）
+            t1 修改 age 20为30
+            t2 读取了更新后的值 age 30
+            t1 回滚 age 变为20
+            t2 读到了无效值 age 30
+        ·不可重复读：指读到了已经提交的事务的更改数据（修改或删除）A读数据时，B更新数据并提交，若A多次读取，则前后读取的数据不一致
+            t1 读取 age=20
+            t2 改为 age=30
+            t1 再次读取 age=30，和第一次读取结果不同
+        ·幻读：读到了其他已经提交事务的新增数据
+            t1 读表 5行
+            t2 插入 1行
+            t1 再读 6行
+    9.数据库的隔离级别：
+        ·隔离级别：一个事务与其他事务隔离的程度。不同隔离级别对应不同干扰程度，隔离程度越高，数据一致性越好，并发性越若
+        ·分类：
+            事务隔离级别（隔离级别渐高）	                脏读	    不可重复读	幻读      概念
+            读未提交（read-uncommitted）	                是	        是	        是       读取到未提交的修改
+            读已提交（read-committed）	                    否	        是	        是       读取到已提交的修改
+            可重复读（repeatable-read）	                    否	        否	        是       读取时，禁止其他事务修改该记录或者字段
+            串行化（serializable）	                        否	        否	        否       读取时，禁止其他事务对此表进行增删改，可解决并发，但是性能较低
+            mysql默认的事务隔离级别为repeatable-read innodb,开发常用的为【读已提交】
+                可重复读，无法避免幻读的问题
+        ·查看命令：
+            select @@tx_isolation;   //查看事物隔离级别
+            show variables like '%iso%'//查看事物隔离级别
+            set session tx_isolation = 'read-committed';设置事物的隔离级别为读已提交
+        ·各个数据库产品对事务隔离级别的支持程度
+            事务隔离级别（隔离级别渐高）	                oracle      mysql
+            读未提交（read-uncommitted）	                不支持	    支持    
+            读已提交（read-committed）	                    支持（默认）支持    
+            可重复读（repeatable-read）	                    不支持      支持（默认）    
+            串行化（serializable）	                        支持	    支持
+        ·注意：
+             1、事务隔离级别为读提交时，写数据只会锁住相应的行
+             2、事务隔离级别为可重复读时，如果检索条件有索引（包括主键索引）的时候，默认加锁方式是next-key 锁；如果检索条件没有索引，更新数据时会锁住整张表。
+                 一个间隙被事务加了锁，其他事务是不能在这个间隙插入记录的，这样可以防止幻读。
+             3、事务隔离级别为串行化时，读写数据都会锁住整张表
+             4、隔离级别越高，越能保证数据的完整性和一致性，但是对并发性能的影响也越大。
+    X.Spring事务失效的原因：
+        1.注解使用错误，放在了接口上：
+            Spring建议在具体的类（或者类方法）上使用@Transactional注解，而不是接口上：
+                在接口上使用 @Transactional 注解，只能当你设置了基于接口的代理时它才生效。因为注解是 不能继承 的，
+                这就意味着如果正在使用基于类的代理时，那么事务的设置将不能被基于类的代理所识别，而且对象也将不会被事务代理所包装。
+        2.数据库引擎设置问题：比如我们最常用的mysql，引擎MyISAM，是不支持事务操作的。需要改成InnoDB才能支持
+        3.入口的方法必须是public，否则事务不起作用（这一点由Spring的AOP特性决定的，理论上而言，不public也能切入，但spring可能是觉得private自己用的方法，
+            应该自己控制，不应该用事务切进去吧）。另外private 方法, final 方法 和 static 方法不能添加事务，加了也不生效
+        4.Spring的事务管理默认只对出现运行期异常(java.lang.RuntimeException及其子类)进行回滚（至于为什么spring要这么设计：因为spring认为Checked的异常属于业务的，
+            coder需要给出解决方案而不应该直接扔该框架）  
+        5.@EnableTransactionManagement // 启注解事务管理，等同于xml配置方式的 <tx:annotation-driven />
+            @EnableTransactionManagement 在springboot1.4以后可以不写。框架在初始化的时候已经默认给我们注入了两个事务管理器的Bean
+            （JDBC的DataSourceTransactionManager和JPA的JpaTransactionManager ），其实这就包含了我们最常用的Mybatis和Hibeanate了。当然如果不是AutoConfig的而是自己自定义的，请使用该注解开启事务
+        6.确认你的类是否被代理了（因为spring的事务实现原理为AOP，只有通过代理对象调用方法才能被拦截，事务才能生效）
+        7.确保你的业务和事务入口在同一个线程里，否则事务也是不生效的，比如下面代码事务不生效：
+            @Transactional
+            @Override
+            public void save(User user1, User user2) {
+            new Thread(() -> {
+            saveError(user1, user2);
+            System.out.println(1 / 0);
+            }).start();
+            }
+        8.@Transactional的事务开启 ，或者是基于接口的 或者是基于类的代理被创建。所以在同一个类中一个无事务的方法调用另一个有事务的方法，事务是不会起作用的
+            （这就是业界老问题：类内部方法调用事务不生效的问题原因）
+            controller：
+                service.test(list);
+            service:
+                //@Transactional的事务开启 ，或者是基于接口的 或者是基于类的代理被创建。所以在同一个类中一个无事务的方法调用另一个有事务的方法，事务是不会起作用的
+                @Override
+                public void test(List<String> list){
+                    test22(list);
+                }
+                @Transactional
+                public void test22(List<String> list){
+                    for(String str : list){
+                        //调用子service
+                        serviceChild.testChild(str);
+                    }
+                }
+            serviceChild：
+                 @Transactional(propagation = Propagation.REQUIRES_NEW)
+                 public void testChild(String str){
+                    dao.testChild(str);
+                 }

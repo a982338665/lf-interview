@@ -539,6 +539,338 @@
         4.过滤性不好的不适合索引：例如性别字段
 
 ## 15 JVM垃圾回收机制
-    
-    
+
+    0.运行时数据区
+        ·方法区
+        ·java栈
+        ·本地方法区
+        ·程序计数器
+        ·堆
+    1.垃圾回收发生在哪部分：
+        堆：
+    2.GC：
+        频繁收集新生代
+        较少收集老年代
+        基本不动永久代
+    3.GC算法：
+            1.JVM概述：
+                1.虚拟机：vm,Virtual Machine
+                    -逻辑上，一台虚拟的计算机
+                    -实际上，一个软件，能够执行一系列虚拟的计算指令，介于软件和硬件之间
+                    -系统虚拟机：-桌面程序和服务器级别的
+                        ·对物理计算机的仿真
+                        ·如VMware,Oracle VirtualBox等
+                    -软件虚拟机：
+                        ·专门为单个计算程序而设计
+                        ·如JVM等
+                2.java官方虚拟机发展历程：sun
+                    -当今：2014年jdk1.8发布，Hotsport融合了JRockit
+                3.java常用虚拟机：
+                    ·Sun/Oracle，Classic Vm/Hotsport VM/JRockit VM
+                    ·IBM/Eclipse:J9 VM,https://www.eclipse.org/openj9/
+                    ·OpenJDK:开源的虚拟机，https://openjdk.java.net:由此衍生出很多大公司的特定的虚拟机，如Alibaba JVM等
+                        在jdk1.6的时候由Sun公司同步建立的开源项目，虚拟机开源，可拿到源码
+                    ·Apache Harmony，已消亡，被OpenJdk冲击
+                    ·Google Android Dalvik Vm，已消亡，被ART虚拟机顶替
+                4.Sun/Oracle和OpenJDK
+                    ·Sun/Oracle:
+                        -从jdk9分成LTS和non-LTS版本，LTS-long term support长期稳定版
+                        -jdk11是LTS，长期稳定版，目前最新的
+                        -OTN协议，个人免费使用，生产环境商用收费+长期更新
+                    ·Open-JDK：
+                        -GPL V2协议
+                        -可以免费使用，含个人和商用
+                5.官方提供的Hotsport虚拟机构成：
+                    一个java类，经过ClassLoader加载以后进入JVM里面，
+                    JVM内存：所有的字节码文件，被加载进jvm内存
+                    那么，有相应的执行机，有相应的执行机读取字节码文件内容，进行执行
+                    最后转化为本地的方法指令进行工作
+                    所有的java字节码可以跨平台使用，但是都要经过jvm解释执行
+                    本次重点学习【JVM内存】，执行机及本地方法是由C语言写的，暂不关注
+            2.JVM内存分类：
+                1.java自动内存管理：
+                    ·传统程序语言：由程序员手动内存管理
+                        -C/C++，malloc申请内存和free手动释放内存
+                        -由于程序员疏忽或程序异常，导致内存泄漏
+                    ·现在程序语言：自动内存管理
+                        -java/C#,采用内存自动管理
+                        -程序员只需要申请使用，系统会检查无用的对象并回收内存
+                        -系统统一管理内存，内存使用相对高效，但也会出现异常
+                2.jvm调优：主要就是针对jvm内存管理进行的调优
+                    ·一般程序员只会使用java的标准虚拟机，很少会自己去定制新的虚拟机，在某方面添加新功能
+                    ·大部分程序员都是在官方的jvm下如何使得程序更加高效
+                3.jvm内存：
+                    ·线程私有内存：java程序运行中的每个线程都含有的内容
+                        -程序计数器 Program Counter Register（PC）
+                            -一块小内存，每个线程都有
+                            -PC只要用来存储当前方法：线程正在执行的方法称为该线程的当前方法
+                            -当前方法为本地（native）方法时，pc值未定义[当前方法为C语言方法时，未定义]
+                            -当前方法为非本地方法时，pc包含了当前正在执行指令的地址[当前语言为java方法时]
+                            -当前唯一一块不会引发OutOfMemaryError异常[小内存存储指令地址不会爆发异常]
+                        -java虚拟机栈 jvm stack - java栈
+                            - 每个线程有自己独立的java虚拟机栈，线程私有
+                            - -Xss设置每个线程堆栈大小
+                            - java方法的执行基于栈
+                                -每个方法从调用到完成对应一个栈帧在栈中入栈，出栈的过程
+                                    ·栈帧存储局部变量表，操作数栈等
+                                    ·局部变量表存放方法中存在"栈"里面的东西
+                                -引发的异常 - 代码展示
+                                    -栈的深度超过虚拟机规定深度，StackOverflowError异常
+                                    -程序中使用过多变量，无法拓展内存，OutOfMemoryError等
+                        -本地方法栈 Native Method Stack
+                            -存储本地（native）方法执行信息，线程私有
+                                ·java调用c程序的时候，c的函数就叫做native方法，会存储在本地方法栈里
+                            -vm规范没有对本地方法栈做明显规定,靠每个虚拟机厂商自己实现
+                            -引发的异常：
+                                -栈的深度超过虚拟机规定深度，StackOverflowError异常
+                                -程序中使用过多变量，无法拓展内存，OutOfMemoryError等
+                    ·多线程共享内存：
+                        -堆 Heap
+                            -虚拟机启动时创建，所有线程共享，占地最大
+                            -对象实例和数组都是在堆上分配内存，int，byte等基本类型数据都是在jvm栈上来定义
+                            -垃圾回收的主要区域
+                            -设置大小：程序能否高效运行的重要因素 - 代码展示两个参数对程序的影响
+                                · -Xms 初始堆值
+                                · -Xmx 最大堆值 
+                            -引发的异常：
+                                · 无法满足内存分配要求，OutOfMemoryError等【内存泄漏/内存不足】
+                                · JVM参数配置 -XX:-OmitStackTraceInFastThrow 会显示所有的堆栈异常信息
+                                · 所以当一些异常抛出的足够多的时候，JIT编译器会优化掉异常堆栈的信息。加入** -XX:-OmitStackTraceInFastThrow**参数才会显示所有的信息。
+                        -方法区 Method Area
+                            ·运行时常量池 Run-Time Constant Pool
+                                -Class文件中常量池的运行时表示
+                                    ·每个class文件中都有一个Constant Pool,在运行的时候，这个类被加载进来，class里面的constant pool就会被映射到内存区域上
+                                -属于方法区的一部分，没法单独进行大小调整，只能调整方法区的大小
+                                -动态性
+                                    ·java语言并不要求常量一定只有在编译期产生
+                                    ·比如使用String.intern方法，也可以将运行时的数据放入常量池
+                                -引发的异常：
+                                    · 无法满足内存分配要求，OutOfMemoryError等【内存泄漏/内存不足】
+                            -存储jvm已经加载类的结构，线程共享：运行时常量池，类信息，常量，静态变量等
+                                -一个jvm能够加载多少个类，这个将会被方法区的大小限制
+                            -jvm启动时创建，逻辑上属于堆的一部分
+                            -很少做垃圾回收
+                            -引发的异常【javaee编写时，jsp会被编译成servlet，此时他的类有可能会超过最大限制，导致内存溢出】
+                                · 无法满足内存分配要求，OutOfMemoryError等【内存泄漏/内存不足】
+                4.总结表
+                    |名称|线程私有/共享|功能|大小|异常|
+                    |---|---|---|---|---|
+                    程序计数器|私有|保存当前线程执行方法|通常固定大小|不会
+                    jvm栈|私有|方法的栈帧|-Xss|OutOfMemoryError & StackOverflowError
+                    本地方法栈|私有|存储native方法信息|通常固定大小|OutOfMemoryError & StackOverflowError
+                    堆|共享|存储对象和数组|-Xms -Xmx|OutOfMemoryError
+                    方法区|共享|存储类结构，常量，静态变量|-XX参数设置[方法区大小随着jdk不同的版本设置的参数还不一样-代码展示]|OutOfMemoryError
+                    运行时常量池|共享|常量池运行时表示|从属于方法区|OutOfMemoryError
+                5.总结：
+                    ·jvm内存分类
+                    ·对照class文件，理清jvm各部分内存的作用
+            3.JVM内存参数：通过调整内存参数，使程序运行高效
+                1.JVM默认的运行参数：
+                    -支持jvm运行的重要配置，根据操作系统，物理硬件不同而不同，特别是内存，机器的物理内存越多，可能有些参数就越大
+                        ·两台机器安装同版本的jdk，然后运行出来的程序，他的jvm默认参数可能有所不同
+                    -使用-XX:+PrintFlagsFinal 显示VM参数
+                        ·完整命令：1M = 1024KB = 1024*1024B 查看堆内存大小
+                            D:\go-20191030\CoreHighLevel\src\main\java\pers\li\annotation\$6>java -XX:+PrintFlagsFinal -version | findstr HeapSize
+                                uintx ErgoHeapSizeLimit                         = 0                                   {product}
+                                uintx HeapSizePerGCThread                       = 87241520                            {product}
+                                uintx InitialHeapSize                          := 201326592                           {product} [换算：201326592b/1024/1024 = 192M ] 初始堆内存
+                                uintx LargePageHeapSizeThreshold                = 134217728                           {product} [128M] 
+                                uintx MaxHeapSize                              := 3191865344                          {product} [3044M = 2G 996M] 最大堆内存
+                            java version "1.8.0_231"
+                            Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+                            Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+                        ·命令解析：
+                            1.使用管道查找堆内存大小：| findstr HeapSize
+                                findstr 对关键字的查找
+                2.程序启动的两类参数：- param.jpg
+                    -程序参数：程序需要，存储在main函数的形参数组中
+                    -虚拟机参数：更改默认配置，用以指导进程运行
+                        · -X参数，不标准，不在所有的VM中通用 non-standard
+                        · -XX参数，不稳定，容易变更  non-stable ，可能下个版本参数就被废弃了
+                3.本示例使用 JDK1.8
+                    -jvm堆内存：设置最大值为20M:-Xmx20M 【HeapOOM】
+                        -循环创建对象 Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+                    -jvm栈内存：【JvmStackSOF】 StackOverFlowError -Xss1M
+                        -循环调用方法 - 递归无限调用
+                        -循环方法中局部变量 - 【JvmStackSOF】
+                        -多线程 - 【JvmStackOOM】
+                    -方法区：-XX参数命令，可能会变更，不稳定
+                        -存储类信息，常量池，静态变量等
+                        -1.7及以前，永久区（Perm），-XX:PermSize,-XX:MaxPermSize
+                            查看命令：java -XX:+PrintFlagsFinal -version | findstr Perm
+                        -1.8及以后，元数据区，-XX:MetaspaceSize,-XX:MaxMetaspaceSize,
+                            查看命令：java -XX:+PrintFlagsFinal -version | findstr Meta
+                            D:\go-20191030\CoreHighLevel\src\main\java\pers\li\annotation\$6>java -XX:+PrintFlagsFinal -version | findstr Meta
+                                uintx InitialBootClassLoaderMetaspaceSize       = 4194304                             {product}
+                                uintx MaxMetaspaceExpansion                     = 5451776                             {product}
+                                uintx MaxMetaspaceFreeRatio                     = 70                                  {product}
+                                uintx MaxMetaspaceSize                          = 4294901760                          {product}    默认的方法区最大值：约等于4G
+                                uintx MetaspaceSize                             = 21807104                            {pd product} 默认的方法区初始大小：20.79M
+                                uintx MinMetaspaceExpansion                     = 339968                              {product}
+                                uintx MinMetaspaceFreeRatio                     = 40                                  {product}
+                                 bool TraceMetadataHumongousAllocation          = false                               {product}
+                                 bool UseLargePagesInMetaspace                  = false                               {product}
+                            java version "1.8.0_231"
+                            Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+                            Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+                        -存储类信息，若一个项目有很多类，那么默认的方法区是否能够容纳下这么多类，所以在程序运行前，限定最大方法区大小为9M：
+                            -XX:MaxMetaspaceSize=9M 【JavaCompilerTask】在线编译类函数
+                            循环注册类，直到内存溢出 OutOfMemoryError 
+                            注意：因此在写程序时，尽量不使用import * ,因为加载的类越多，方法区所承受的压力就越大，若整个系统要依赖的jar包有几百个，每个jar有几百类，那么方法区消耗就会很快
+                4.总结：
+                    ·jvm运行参数
+                    ·各个区域的调优及参数配置
+            4.java对象引用：--> 判断无用对象
+                1.垃圾收集器：
+                    ·jvm有内置垃圾收集器
+                        -GC，Garbage Collector
+                        -自动清除无用的对象，回收内存
+                    ·垃圾收集器的工作职责（John Mccarthy提出，Lisp语言发明者，人工智能奠基者之一，图灵奖获得者，提出任务分时，和垃圾回收）
+                        -什么内存需要收集 - 判定无用对象
+                        -什么时候回收 - 何时启动，不影响程序正常运行
+                        -如何回收 - 回收过程要求速度快，时间短，影响小
+                2.java对象的生命周期：
+                    1.对象通过构造函数创建，但是没有析构函数回收内存
+                        构造函数和析构函数：
+                            构造函数：创建对象过程
+                            析构函数：清除对象过程 -> java中没有析构函数，因为自动垃圾回收机制
+                                变量创建站内存，引用消失，回收内存
+                                GC垃圾回收器：回收算法关系性能好坏，是jvm重点
+                    2.对象存在在离他最近的一对大括号中:执行完，可回收，不是立刻回收
+                    3.虽然java程序中没有析构函数，但是提供了其他内存回收的api
+                        -Object的finalize方法，垃圾回收器在回收对象时调用，有且仅被调用一次
+                        -System的gc方法，运行垃圾收集器
+                        -以上两种方法均不靠谱，因为虚拟机会自己决定什么时候来运行垃圾收集器，所以即使写上，虚拟机也不一定会运行垃圾收集器，所以目的转变为怎么使垃圾收集器快速定位到 可回收对象
+                    4.基于对象引用判定无用对象
+                        -零引用和互引用等
+                    5.对象引用链：
+                        -通过一系列的称为"GC Roots"的对象作为起始点，从这些节点开始向下搜索，搜索所走过的路径称为引用链，当一个对象到GC roots没有任何引用链相连
+                            （用图论话来说，从GC Roots到这个对象不可达）时，则证明此对象是不可用的
+                        -GC Roots对象包括：--> 当前活着的对象可当做出发点来用
+                            -虚拟机栈中的引用对象
+                            -方法区中类静态属性引用的对象
+                            -方法区中常量引用的对象
+                            -本地方法栈中引用的对象
+                    6.为了加快垃圾收集器判定无用对象的速度，java提供了几种不同的引用方法：
+                        Java执行GC判断对象是否存活有两种方式其中一种是引用计数。
+                            引用计数：Java堆中每一个对象都有一个引用计数属性，引用每新增1次计数加1，引用每释放1次计数减1。
+                            在JDK 1.2以前的版本中，若一个对象不被任何变量引用，那么程序就无法再使用这个对象。也就是说，只有对象处于(reachable)可达状态，程序才能使用它。
+                            从JDK 1.2版本开始，对象的引用被划分为4种级别，从而使程序能更加灵活地控制对象的生命周期。这4种级别由高到低依次为：强引用、软引用、弱引用和虚引用
+                        -强引用：所有对象的赋值，均叫做强引用
+                            ·例如：Object obj1 = new Object(); Object obj2 = obj1; 当obj1置为null，其实例仍赋值给obj2，所以该实例仍然不会被回收
+                            ·只要强引用存在，对象就不会被回收，哪怕发生OOM异常 - OutOfMemoryError
+                            ·场景：
+                                在一个方法的内部有一个强引用，这个引用保存在Java栈中，而真正的引用内容(Object)保存在Java堆中。
+                                当这个方法运行完成后，就会退出方法栈，则引用对象的引用数为0，这个对象会被回收。
+                                但是如果这个strongReference是全局变量时，就需要在不用这个对象时赋值为null，因为强引用不会被垃圾回收。
+                                ArrayList的Clear方法:方法内存数组中存放的引用类型进行内存释放特别适用，这样就可以及时释放内存。
+                        -软引用：
+                            ·描述有用，但非必须的对象
+                            ·在系统将要发生内存溢出异常之前，会把这些对象列为可回收
+                            ·JDK提供了SoftReference类来实现软引用
+                            ·场景：页面缓存问题，若未被回收，取出来，已回收，重新获取，常用于缓存数据
+                        -弱引用：
+                            ·描述非必须对象，比软引用更弱一些
+                            ·被软引用关联的对象，只能生存到下一次垃圾收集器发生之前
+                            ·jdk提供了WeakReference类来实现弱引用
+                        -虚引用：用来跟踪对象的回收过程
+                            ·最弱的引用关系，jdk提供PhantomReference实现虚引用
+                            ·为一个对象设置虚引用关联的唯一目的就是能在这个对象被收集器回收时收到一个系统通知，用于对象回收跟踪
+                            ·场景：
+                                虚引用必须和引用队列(ReferenceQueue)联合使用。当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在回收对象的内存之前，
+                                把这个虚引用加入到与之关联的引用队列中。
+                                程序可以通过判断引用队列中是否已经加入了虚引用，来了解被引用的对象是否将要进行垃圾回收。如果程序发现某个虚引用已经被加入到引用队列，
+                                那么就可以在所引用的对象的内存被回收之前采取必要的行动。
+                    7.总结：
+                        强引用：正常赋值        不回收
+                        软引用：SoftReference   内存紧张时回收
+                        弱引用：WeakReference   只要gc就回收
+                        虚引用：PhantomReference随时被回收
+                        软引用和弱引用适合保存可有可无的缓存数据
+                        在日常程序编写中，我们对一些不重要的数据，例如缓存数据等，可以采用软引用，弱引用可以加快对象所占用的内存的回收速度
+            5.垃圾收集算法：--> 什么时候回收不影响程序运行，如何回收好
+                1.引用计数法：4种引用
+                    1.介绍：
+                        -一种古老的算法，每个对象都有一个引用计数器
+                        -有引用，计数器加一，失效减一
+                        -计数器为0的时候，回收
+                    2.优点：
+                        -简单高效
+                    3.缺点：
+                        -无法识别对象直接相互循环使用 ，例如 a引用b，b引用a，但是其他外部没有引用a和b,那么a和b作为整体是可以被回收的，但是用词方法无法回收
+                2.标记-清除：可以根据引用计数法标记出来
+                    1.介绍：
+                        -标记阶段：标记出所有需要回收的对象
+                        -回收阶段：统一回收所有被标记的对象
+                    2.优点：简单
+                    3.缺点：
+                        -效率不高
+                        -内存碎片：内存不连续
+                3.复制算法：
+                    -将可用内存容量划分为大小相等的两块，每次只使用其中的一块
+                    -当这一块用完了，就将还存活的对象复制到另一块上面去
+                    -然后在把已使用过的内存空间一次清理掉
+                    -优点：简单高效
+                    -缺点：
+                        ·可用内存减少：本来是一整块，后面可用的只有一半
+                        ·对象存活率高时，复制操作较多
+                4.标记-整理：
+                    -标记阶段：与“标记-清除”算法一样
+                    -整理阶段：让所有存活的对象都向一端移动，然后直接清理掉端边界以外的内存
+                    -优点：
+                        -避免碎片产生
+                        -无需两块相同内存
+                    -缺点：
+                        -计算代价大，标记清除+碎片整理
+                        -更新引用地址
+                5.分代收集：-> 标准JVM普遍采用的垃圾收集算法
+                    -java对象根据生命周期不同，有长有短
+                    -根据对象存活周期，将内存划分为新生代和老年代
+                    -新生代：-会频繁gc
+                        ·主要存放短暂生命周期的对象
+                        ·新创建的对象都先放入新生代，大部分新建对象在第一次gc时被回收
+                    -老年代：-不会频繁gc
+                        ·一个对象经过几次gc仍存活，则放入老年代
+                        ·这些对象可以存活很长时间，或者伴随程序一生，需要常驻内存的，可以减少回收次数
+                    -针对不同代进行不同算法：
+                        -新生代：复制算法，包含两部分
+                            -Eden区：占比80%
+                            -Survivor区：占比20%
+                                ·From Space 50%
+                                ·To Space   50%
+                            -解释：
+                                1.对象创建优先放在 Eden和From Space区
+                                2.在第一次GC的时候会将里面还活着的内容复制到 To Space区
+                                3.因为新生代对象，大部分在第一次gc的时候都会死掉，都会被回收，只有少部分会被放到To Space里面
+                                4.那么 Eden和From Space就会被清空
+                                5.新的对象 被放在 Eden 和 To Space里面
+                                6.下次gc ，将eden 和 To space里面活着的对象放到 From Space
+                                7.那么 Eden 和To Space就会被清空
+                                8.所以新生代里会采用复制的算法，进行活的对象的拷贝
+                        -老年代：标记清除或标记整理
+                            -由于老年代的存活率非常高，所以采用标记-清除，或标记-整理的方式
+                        -注意：永久代-jdk6和jdk7，jdk8的时候重命名为元数据区，里面存放的都是类结构等
+                6.总结：
+                    理解各种垃圾收集方法的基本原理
+                    理解分代收集和java堆内结构
+            6.JVM堆内存参数设置和GC跟踪：
+                1.堆内存参数：
+                    ·-Xms 初始堆大小
+                    ·-Xmx 最大堆大小
+                    ·-Xmn 新生代大小：包含eden,from,to
+                    ·-XX:SurvivorRatio设置eden区/from(to)的比例
+                    ·-XX:NewRatio 设置老年代/新生代比例
+                    ·-XX:+PrintGC/-XX:+PrintGCDetails打印GC的过程信息：可以看出垃圾收集器在垃圾收集过程中内存变化情况
+                2.Hotspot现有垃圾收集器：
+                    ·串行收集器  Serial Collector 
+                    ·并行收集器  Parallel Collector   大内存可用
+                    ·CMS收集器 Concurrent Mark Sweep Collector java高版本
+                    ·GI收集器  Garbage-First Collector  java高版本 
+                    ·Z收集器   Z Garbage Collector java高版本
+            7.jvm内存管理总结和展望     
+                ·自己编译一个jvm
+                ·jvm的多种垃圾收集器的使用和区别
+                ·理解每一种内存分类的职责，熟悉相关参数设置
+                ·根据GC报告和VM监控。调整正确的内存分配策略，例如新生代/老生代之比
+       
         

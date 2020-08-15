@@ -1,9 +1,5 @@
 # https://github.com/a982338665/lf-mkd-java-win-sock-demo.git
 
-
-
-## http
-
 ## keepalive
 
 ## telnet

@@ -1,6 +1,8 @@
 
 ## 部分来自：https://github.com/a982338665/lf-mkd-java-base-muke.git
+## 部分来自：https://github.com/a982338665/lf-mkd-java-core-high-level.git
 >com/hdsf/hdsf/华东师范-1.md
+>src\main\java\pers\li\syntacticsuger\$3\boxing
 
 
 **23.常量设计和常量池：**
@@ -60,3 +62,27 @@
         StringBuffer耗时：8
         StringBuilder耗时：2
         StringConcat耗时：632
+
+**高级部分：**
+    
+    3.自动拆装箱，多异常并列，数值类型赋值优化：
+        1.自动拆装箱：auto-boxing/auto-unboxing
+            ·jdk5开始引入，简化了基本类型和对象转换的方法
+            ·基本类型：boolean、byte、char、int、short、long、float、double
+            ·对象：    Boolean、Byte、Character、Integer、Short、Long、Float、Double
+            ·注意事项：
+                -装箱和拆箱是编译器的工作，在class中已经被转换，也就是说虚拟机没有自动拆箱和装箱的功能
+                -==：基本类型是内容相同，对象是指针是否相同（内存同一个区域）
+                -基本类型没有null，对象有null
+                -当一个基础数据类型与封装类进行==，+，-，*，/运算时，会将封装类拆箱，对基础数据进行运算
+                -谨慎使用多个非同类的数值类对象进行运算
+        2.多异常并列：
+            ·jdk7引入，简化写法，并列写在一个catch中，使用管道符号【|】，与或不同
+            ·多个异常之间不能有直接或间接的继承关系，如果有会报错
+            ·如果针对不同异常有不同的处理方式，那最好不要使用此种方式
+        3.数值类型赋值优化：
+            ·java7新语法：整数类型用二进制数赋值，避免二进制计算【byte、short、int、long】
+            ·java7新语法：添加下划线，增加代码可读性和纠错功能，编译器在编译时会自动去掉下划线，下划线只能出现在数字中继，前后必须有数字
+        4.总结：
+            ·多异常并列不建议使用
+            ·数值类型赋值优化建议使用

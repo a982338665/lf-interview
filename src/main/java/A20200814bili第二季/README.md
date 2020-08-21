@@ -87,5 +87,69 @@
     2.经过以上调整可能成功率达到99.99%，但是仍有机会出问题，因为指令重排的问题，所以还需要【加volatile】:
     3.解释：看代码
     
+## 12 CAS是什么？
+    
+    1.原子整型类AtomicInteger底层实现：CAS解决多线程下i++问题
+    2.定义：比较并交换 是方法 compareAndSet的缩写
+        如果线程的期望值==物理内存的真实值，则修改为更新值
+    3.CAS：全称Compare-And-Swap，他是一条cpu并发原语，即线程安全，直接操作最底层，不会有缓冲影响，不会造成数据不一致
+        功能：判断内存某个位置的值是否为预期值，如果是则更改为新的值，这个过程是原子的
+        体现：在java语言中就是sun.misc.Unsafe类中的各个方法，调用unsafe类中的cas方法，jvm会帮我们实现出cas汇编指令。这是一种完全依赖于硬件的功能，通过它实现原子操作
+        强调：cas是一种系统原语，属于操作系统用语范畴，是由若干条指令组成的用于完成某个功能的过程，并且原语的执行必须是连续的，执行过程中不允许被中断，也就是说cas是一条
+            CPU的原子指令，不会出现数据不一致的情况
+    
+## 13 CAS底层原理上？
+    
+    1.底层原理：
+        ·自旋锁
+        ·UnSafe类:jre/lib/rt.jar下
+            是cas核心类，由于java无法直接访问底层系统，需要通过本地方法（native）方法来访问，Unsafe相当于一个后门，基于该类可以直接操作特定内存的数据。
+            unsafe类存在于sun.misc包中，其内部方法操作可以像C的指针一样直接操作内存，因为java中cas操作的执行依赖于Unsafe类的方法
+            注意：Unsafe类中，所有的方法都是native修饰的，也就是说，unsafe类中的方法都直接调用操作系统底层资源执行相应任务            
+    2.源码释义:看代码      
+    
+## 14 CAS底层原理下？
+
+    ·源码：
+        AtomicInteger：
+            public final int getAndIncrement() {
+                    return unsafe.getAndAddInt(this, valueOffset, 1);
+            }
+        Unsafe：
+            /**
+             * var1:    AtomicInteger对象本身
+             * var2:    该对象值的引用地址
+             * var4:    需要变动的数量，即+1
+             * var5:    通过var1，var2在主内存中找到的真实值
+             * this.compareAndSwapInt(var1, var2, var5, var5 + var4):
+             *    如果根据var1，var2得到的值==var5，则将var5+var4得到的结果更新到主内存中       
+             *    如果根据var1，var2得到的值!=var5，则重新循环继续取值比较更新       
+             */
+            public final int getAndAddInt(Object var1, long var2, int var4) {
+                int var5;
+                do {
+                    var5 = this.getIntVolatile(var1, var2);
+                } while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+        
+                return var5;
+            }
+    ·原理：通过不断的比较去更新值，既保证了一致性，又提高了并发
+    ·cas释义：
+        比较当前工作中内存的值和主内存中的值，如果相同，则执行规定操作，否则一直比较直到相同为止
+    ·cas应用：
+        cas有三个操作数，内存值A，旧值V，预期的新值B
+        当A=V时，将内存值改为B，否则什么都不做，继续自旋比较
+        
+## 15 CAS缺点？
+    
+    1.循环时间长，会给cpu带来很大开销（自旋）
+    2.只能保证一个共享变量的原子操作
+    3.引出的ABA的问题
+    
+## 16 ABA问题
+    
+    
+    
+    
     
     

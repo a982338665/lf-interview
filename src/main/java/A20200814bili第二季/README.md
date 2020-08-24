@@ -223,9 +223,22 @@
     
 ## 22 集合类不安全之Set
     
-    
-    
+    1.HashSet
+    2.Collections.synchronizedSet
+    3.CopyOnWriteArraySet -- 底层实际还是 CopyOnWriteArrayList
+    4.HashSet底层是什么？就是HashMap，有参数构造时初始值16，负载因子为0.75的标准HashMap
+    5.既然HashSet底层是HashMap,而HashMap存储的是键值对，可是HashSet的add方法仅能写入一个值？这是为什么？
+        源码分析：
+            1.无参构造：public HashSet() {map = new HashMap<>();}
+            2.有参构造：public HashSet(Collection<? extends E> c) { map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));addAll(c);}
+            3.add方法： public boolean add(E e) {return map.put(e, PRESENT)==null;}
+                // Dummy value to associate with an Object in the backing Map 支持映射中的对象关联的伪值
+                private static final Object PRESENT = new Object();常量伪值
+            
 ## 23 集合类不安全之Map
+    
+    
+    
 ## 24 TransferValue醒脑小练习
     
     

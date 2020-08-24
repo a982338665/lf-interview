@@ -169,9 +169,62 @@
     1.使用AtomicStampedReference版本号原子引用
 
 ## 20 集合类不安全之并发修改异常
-
+    
+    0.ArrayList
+        //1.初始化时默认没有指定大小,new ArrayList<>(initialCapacity),可以在初始化的时候指定
+        //2.add时会初始化大小为10
+    1.Vector
+        //1.new对象的时候初始化大小为10
+        public Vector() {this(10);}
+        //2.add的时候加锁方法上
+        public synchronized boolean add(E e) {}
+    2.Collections.synchronizedList(new ArrayList<>());
+        //1.初始化大小也在add内部
+        //2.他的锁是加在 内部类中的属性：：final Object mutex;
+        @Override
+        public boolean add(T e) {
+            synchronized(mutex) {
+                return backingList.add(e);
+            }
+        }
+        //3.读操作，加锁性能差点
+        public E get(int index) {synchronized (mutex) {return list.get(index);}}
+    
 ## 21 集合类不安全之写时复制
+    
+    3.new CopyOnWriteArrayList<>();
+        public boolean add(E e) {
+            final ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                //1.拿到当前数组
+                Object[] elements = getArray();
+                int len = elements.length;
+                //2.复制并扩容加1个长度，得到新数组
+                Object[] newElements = Arrays.copyOf(elements, len + 1);
+                //3.将要添加的数据放到扩容的那个长度里
+                newElements[len] = e;
+                //4.更新当前数组为最新数组
+                setArray(newElements);
+                //5.返回成功
+                return true;
+            } finally {
+                lock.unlock();
+            }
+        }
+    4.写时复制：读写分离的思想
+    5.分析比较：
+        Vector：锁加在方法上 add ，get
+        CopyOnWriteArrayList：锁加在代码块里面的对象上，发生修改时候做copy，新老版本分离，保证读的高性能，适用于以读为主，读操作远远大于写操作的场景中使用，比如缓存。每次写都要复制新集合，所以写慢，无锁，所以读快
+        Collections.synchronizedList：可以用在CopyOnWriteArrayList不适用，但是有需要同步列表的地方，读写操作都比较均匀的地方。
+    6.Java的synchronized加在方法上或者对象bai上区别如下
+      1.synchronized 在方法上，所有这个类的加了 synchronized 的方zhi法，在执行时，dao会获得一个该类的唯一的同步锁，当这个锁被占用时，其他的加了 synchronized 的方法就必须等待
+      2.加在对象上的话，就是以这个对象为锁，其他也以这个对象为锁的代码段，在这个锁被占用时，就必须等待
+    
 ## 22 集合类不安全之Set
+    
+    
+    
 ## 23 集合类不安全之Map
 ## 24 TransferValue醒脑小练习
     

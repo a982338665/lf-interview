@@ -237,7 +237,9 @@
             
 ## 23 集合类不安全之Map
     
-    
+    1.HashMap
+    2.Collections.synchronizedMap
+    3.ConcurrentHashMap//分段锁...需要细化
     
 ## 24 TransferValue醒脑小练习
     

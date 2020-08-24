@@ -18,5 +18,9 @@ public class SomeEntity {
         System.out.println(o3.getClass().isAnnotationPresent(Table.class)); // false
 
         System.out.println(o3.isAnnotationPresent(Table.class)); // true
+
+        SomeEntity someEntity = new SomeEntity();//true
+        Class<? extends SomeEntity> aClass = someEntity.getClass();
+        System.err.println(aClass.isAnnotationPresent(Table.class));
     }
 }

@@ -145,3 +145,21 @@
          同时也提升了效率改用h&(length-1)而不是h%length是为了提高效率（相比于hashTable的优化）
         ·length为2的整数次幂时，length-1为奇数，奇数的二进制最后一位为1，那么&运算后的结果可能为0或1
          若length-1偶数，则最后一位为0，那么&运算后的结果只能为0，即数组会浪费一半的空间
+
+#### 2.4 List与Set
+
+    Collection父接口：
+        ·List   - 可重复集合
+            ·ArrayList：线程不安全，动态数组结构，性能好
+            ·Vector：线程安全，动态数组结构，性能差点
+            ·LinkedList：
+        ·Set    - 不可重复集合
+            ·HashSet：内部是由哈希表（实际上是一个 HashMap 实例）支持的。它不保证 set 元素的迭代顺序。
+            ·TreeSet：TreeSet 使用元素的自然顺序对元素进行排序，或者根据创建 set 时提供的 Comparator 进行排序。
+    Map：未继承Collection，独立的接口，键值对，存储的数据都是无序的，key不能重复，value可重复
+        ·Hashtable
+        ·HashMap
+        ·TreeMap
+        ·LinkedHashMap
+      
+#### 2.5 

@@ -43,5 +43,19 @@
         --饿汉式
     建议：饿汉或者双检锁
     
-## 5.
+## 5.建造者模式
+    
+    思想：Builder模式可以将一个类的构建和表示进行分离。
+    举例：构建者模式是一个非常实用而常见的创建类型的模式（creational design pattern)，
+        1.例如图片处理框架Glide
+        2.网络请求框架Retrofit等都使用了此模式。
+        3.mybatis-plus框架中,List<User> users = new User().selectAll();此种用法不知道算不算建造者模式？？？
+    扩展：其实上面的内容是Builder在Java中一种简化的使用方式，经典的Builder 模式与其有一定的不同，如果没有兴趣的同学就可以不用往下读了。
+    builder模式有4个角色：
+        Product: 最终要生成的对象，例如 Computer实例。
+        Builder： 构建者的抽象基类（有时会使用接口代替）。其定义了构建Product的抽象步骤，其实体类需要实现这些步骤。其会包含一个用来返回最终产品的方法Product getProduct()。
+        ConcreteBuilder: Builder的实现类。
+        Director: 决定如何构建最终产品的算法. 其会包含一个负责组装的方法void Construct(Builder builder)， 在这个方法中通过调用builder的方法，就可以设置builder，
+                  等设置完成后，就可以通过builder的 getProduct() 方法获得最终的产品。
+
     

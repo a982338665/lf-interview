@@ -13,7 +13,7 @@
     2.常量池：
         1.java为很多基本类型的包装类、字符串都建立了常量池
         2.相同的值只存储一份，节省内存，共享访问，提高运行速度
-        3.基本类型的包装类：常量池缓存范围
+        3.基本类型的包装类：常量池默认的缓存范围【可修改：-Djava.lang.Integer.IntegerCache.high=10000 此参数加载VM下，属于VM options】
             Boolean     true/false
             Byte        -128 到 127  
             Short       -128 到 127  

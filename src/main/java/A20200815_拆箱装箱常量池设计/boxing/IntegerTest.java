@@ -7,7 +7,7 @@ public class IntegerTest {
 	{
 		//没有自动装箱时
 		Integer obj2 = Integer.valueOf(5);
-		//等号右边是int类型，西东装箱后赋值给Integer对象，简化了写法
+		//等号右边是int类型，自动装箱后赋值给Integer对象，简化了写法
 		Integer obj1 = 5;  //自动装箱
 
 		int a1 = obj1;     //自动拆箱

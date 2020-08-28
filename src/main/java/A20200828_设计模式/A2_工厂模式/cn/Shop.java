@@ -1,4 +1,4 @@
-package A20200828_设计模式.A2_工厂模式;
+package A20200828_设计模式.A2_工厂模式.cn;
 
 /**
  * @author : Mr huangye

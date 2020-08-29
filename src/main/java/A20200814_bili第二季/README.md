@@ -242,9 +242,24 @@
     3.ConcurrentHashMap//分段锁...需要细化
     
 ## 24 TransferValue醒脑小练习 - 值传递/引用传递
-    
 ## 25 java锁之公平锁和非公平锁
+
+    1.公平锁：是指多个线程按照申请锁的顺序来获取锁。先来的先处理，按队列走
+    2.非公平锁：是指多个线程获取锁的顺序并不是按照申请锁的顺序，有可能后申请的线程比先申请的线程优先获取锁。
+              有可能，会造成优先级反转或者饥饿现象。
+    3.public ReentrantLock(boolean fair) {sync = fair ? new FairSync() : new NonfairSync();}
+    4.吞吐量：非公平锁>公平锁，公平锁仍多维护一个类似于队列的东西保证顺序
+    5.synchronized也是一种非公平锁
+
 ## 26 java锁之可重入锁和递归锁理论知识
+
+    1.线程可以进入任何一个他已经拥有锁所同步者的代码块
+    2.锁中套锁
+    3.synchronized void setA() throws Exception{    Thread.sleep(1000);    setB();}
+      synchronized void setB() throws Exception{    Thread.sleep(1000);}
+    4.防止死锁
+    5.synchronized、ReentrantLock都是可重入锁
+
 ## 27 java锁之可重入锁和递归锁代码验证
 ## 28 java锁之自旋锁理论知识
 ## 29 java锁之自旋锁代码验证

@@ -291,6 +291,9 @@
         读读 共享
     
 ## 32 CountDownLatch    
+
+    1.倒计时,计数减为0，继续往下走
+
 ## 33 CyclicBarrierDemo    
 ## 34 SemaphoreDemo    
 ## 35 阻塞队列理论    

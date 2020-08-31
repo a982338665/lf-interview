@@ -293,14 +293,67 @@
 ## 32 CountDownLatch    
 
     1.倒计时,计数减为0，继续往下走
+    2.将条件判断改为枚举判断
 
 ## 33 CyclicBarrierDemo    
+    
+    1.跟CountDownLatch相反，做加法，集合开会的意思
+    
 ## 34 SemaphoreDemo    
+    
+    1.信号量主要用于两个目的：
+        ·一个是用于多个共享资源的互斥使用
+        ·另一个用于并发线程数的控制
+    2.dubbo-rpc-nio-netty
+    
 ## 35 阻塞队列理论    
+    
+    1.ArrayBlockingQueue：是一个基于数组结构的有界阻塞队列，此队列按FIFO-先进先出原则对元素进行排序
+    2.LinkedBlockingQueue：一个基于链表结构的阻塞队列，此队列按FIFO-先进先出原则对元素进行排序,吞吐量通常高于ArrayBlockingQueue
+    3.SynchronousQueue：一个不存储元素的阻塞队列，每个插入操作必须等到另一个线程调用移除操作，否则插入操作一直处于阻塞状态，吞吐量一般高于LinkedBlockingQueue
+    4.队列：排队-先到先得
+    5.阻塞队列：
+        ·阻塞队列的好处？
+        ·必须阻塞，怎么管理阻塞？
+    
 ## 36 阻塞队列接口结构和实现类    
+
+    1.生产者-消费者
+    2.线程一往阻塞队列中添加元素，线程二从阻塞队列中移除元素
+        ·阻塞队列为空，取出操作会被阻塞
+        ·阻塞队列已满，添加操作会被阻塞
+    3.阻塞：在某些情况下会挂起线程，一旦条件满足，挂起的线程又会被唤醒
+        ·为什么需要BlockingQueue？
+            不需要关心什么时候该阻塞，什么时候该唤醒，内部已经实现，不需要程序员自己去控制数据安全及性能
+    4.除了ArrayList，LinkedList还用过哪些？还有 CopyOnWriteArrayList，BlockingQueue
+    5.Iterable：
+        Collection：
+            ·List
+            ·Queue接口
+                ·BlockingQueue 阻塞队列接口
+                    1.LinkedTransferQueue   由链表结构组成的无界阻塞队列
+                    2.LinkedBlockingDeque   由链表结构组成的双向阻塞队列-双端队列
+                    3.PriorityBlockingQueue 支持优先级排序的无界阻塞队列
+                    5.DelayQueue            使用优先级队列实现的延迟无界限阻塞队列
+                    -- 主要讲以下三个
+                    6.ArrayBlockingQueue    由数组构成的有界阻塞队列
+                    4.SynchronousQueue      不存储元素的阻塞队列，也即单个元素的队列，有且只有一个，生产一个，消费一个
+                    7.LinkedBlockingQueue   由链表构成的有界阻塞队列（单大小默认值为Integer.MAX_VALUE，21亿多，所以一定谨慎使用）
+    6.BlockingQueue核心方法：查看图片
+    
 ## 37 阻塞队列API之抛出异常组    
+    
+    1.异常组：add(e)  remove()  element()-检查，无报错
+    
 ## 38 阻塞队列API之返回布尔值组    
+    
+    1.返回布尔值组：offer(e)  remove(e)/poll() peek()-检查，无返回null
+    
 ## 39 阻塞队列API之阻塞和超时控制    
+
+    1.阻塞：put(e)  take() 
+    2.超时： offer(e,time,unit) poll(time,unit)
+        
 ## 40 阻塞队列之同步SynchronousQueue队列    
 ## 41 线程通信之生产者，消费者传统版
 ## 42 synchronized与lock的区别

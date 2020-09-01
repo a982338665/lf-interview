@@ -354,10 +354,55 @@
     1.阻塞：put(e)  take() 
     2.超时： offer(e,time,unit) poll(time,unit)
         
-## 40 阻塞队列之同步SynchronousQueue队列    
+## 40 阻塞队列之同步SynchronousQueue队列 
+    
+    1.0库存队列，生产一个消费一个
+       
 ## 41 线程通信之生产者，消费者传统版
+
+    1.多线程三句口诀：
+        1.线程 操作（方法） 资源类
+        2.判断 干活 通知
+        3.防止虚假唤醒机制-多线程判断用while 可使用if尝试错误情况
+    2.Object类的wait和notify方法：查看api知解释
+        wait的api解释中：
+        As in the one argument version ，interrupts and spurious wakeups are possible，and this method should always be used in a loop
+        //在单参数版本中，中断和虚假唤醒是可能的，并且这个方法应该始终在循环中使用
+        synchronized (obj){
+            whild(condition does not hold){
+                obj.wait();
+            }
+        }
+    
 ## 42 synchronized与lock的区别
-## 43 锁绑定多个条件Condition
+    
+    1.原始构成
+        synchronized 
+                1.属于jvm层面是java关键字
+                2.底层：
+                    monitorenter 底层是通过monitor对象来完成，其实wait和notify方法也依赖于monitor对象，只有在同步块或方法中才能掉wait/notify等方法
+                    monitorexit
+        lock 
+            1.属于api层面是java5以后新发行的类java.util.concurrent.locks.lock
+    2.使用方法
+        synchronized:不需要用户手动去释放锁，当synchronized代码执行完，系统会自动让线程释放对锁的占用
+        ReentrantLock:则需要用户手动释放锁，若没有释放，可能会产生死锁现象
+    3.等待是否可中断
+        synchronized:不可中断，除非抛出异常或者正常运行完成
+        ReentrantLock:可中断，
+            ·设置超时方法 trylock(long timeout,TimeUnit unit)
+            ·lockInterruptibly()放在代码块中，调用interrupt方法可中断
+    4.加锁是否公平
+        synchronized为非公平锁
+        ReentrantLock:都可以，构造方法传入boolean值 true为公平，false为非公平,默认非公平锁
+    5.锁绑定多个条件Condition
+        synchronized没有
+        ReentrantLock：用来实现分组唤醒需要唤醒的线程们，可以精确唤醒，而不是像synchronized要么随机唤醒一个线程，要么唤醒全部线程
+        
+## 43 锁绑定多个条件Condition - 精确唤醒，顺序调用
+    
+    见代码
+    
 ## 44 线程通信之生产者，消费者阻塞队列版
 ## 45 Callable接口
 ## 46 线程池使用及优势

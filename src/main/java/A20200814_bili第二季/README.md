@@ -404,6 +404,10 @@
     见代码
     
 ## 44 线程通信之生产者，消费者阻塞队列版
+
+    1.学习路径：volatile - cas - atomicInteger - atomicReference - BlockingQueue - 线程交互
+    2.
+    
 ## 45 Callable接口
 ## 46 线程池使用及优势
 ## 47 线程池三个常用方式
@@ -425,7 +429,59 @@
 ## 63 JVM盘点家底查看初始默认值
 ## 64 JVM盘点家底查看修改变更值
 ## 65 堆内存初始大小快速复习 
-
-
-    
+## 66 常用基础参数栈内存Xss
+## 67 常用基础参数元空间MetaspaceSize
+## 68 常用基础参数PrintGCDetails回收前后对比
+## 69 常用基础参数SurvivorRatio
+## 70 常用基础参数NewRatio
+## 71 常用基础参数Max Tenuring Threshold
+## 72 强引用
+## 73 软引用
+## 74 弱引用
+## 75 软引用和弱引用的使用场景
+## 76 WeakHashMap案例演示
+## 77 虚引用
+## 78 ReferenceQueue引用队列
+## 79 虚引用PhantomReference
+## 80 GCRoots和四大引用小结
+## 81 SOFE-StackOverflowError
+## 82 OOM-java heap space
+## 83 OOM-GC overhead limit exceeded
+## 84 OOM-Direct buffer memory
+## 85 OOM-unable to create new native thread故障演示
+## 86 OOM-unable to create new native thread上限调整
+## 87 OOM-Metaspace
+## 88 垃圾收集器回收种类
+## 89 串行，并行，并发G1四大垃圾回收方式
+## 90 如何查看默认的垃圾收集器
+## 91 JVM默认的垃圾收集器有哪些
+## 92 GC-7大垃圾收集器概述
+## 93 GC-约定参数说明
+## 94 GC-Serial收集器
+## 95 GC-ParNew收集器
+## 96 GC-Parallel收集器
+## 97 GC-ParallelOld收集器
+## 98 GC-CMS收集器
+## 99 GC-SerialOld收集器
+## 100 GC-如何选择垃圾收集器
+## 101 GC-G1收集器
+## 102 GC-G1底层原理
+## 103 GC-G1参数配置及CMS的比较
+## 104 JVM-GC结合SpringBoot微服务优化简介
+## 105 linux命令-top
+## 106 linux命令-cpu查看vmstat
+## 107 linux命令-cpu查看pidstat
+## 108 linux命令-内存查看free和pidstat
+## 109 linux命令-硬盘查看df
+## 110 linux命令-磁盘io查看iostat，pidstat
+## 111 linux命令-网络io查看ifstat
+## 112 cpu占用过高的定位分析思路
+## 113 github-开启
+## 114 github-常用词
+## 115 github-in限制搜索
+## 116 github-star和fork范围搜索
+## 117 github-awesome搜索
+## 118 github-#L数字
+## 119 github-T搜索
+## 120 github-搜索区域活跃用户
     

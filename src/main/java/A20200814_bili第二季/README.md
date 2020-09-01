@@ -406,10 +406,21 @@
 ## 44 线程通信之生产者，消费者阻塞队列版
 
     1.学习路径：volatile - cas - atomicInteger - atomicReference - BlockingQueue - 线程交互
-    2.
     
 ## 45 Callable接口
+
+    1.线程创建的方式：
+        ·集成Thread类
+        ·实现Runnable接口
+            - 没有返回值
+        ·实现Callable<T>：接口第三种获得多线程的方式很常用（100个线程有两个错误了，需要他的返回值）
+            - 有返回值
+    2.FutureTask
+    
 ## 46 线程池使用及优势
+
+    
+    
 ## 47 线程池三个常用方式
 ## 48 线程池七大参数入门简介
 ## 49 线程池七大参数深入介绍

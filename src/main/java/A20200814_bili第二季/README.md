@@ -415,16 +415,87 @@
             - 没有返回值
         ·实现Callable<T>：接口第三种获得多线程的方式很常用（100个线程有两个错误了，需要他的返回值）
             - 有返回值
+        ·线程池
     2.FutureTask
     
 ## 46 线程池使用及优势
 
+    1.为什么用线程池？优势是什么？
+        线程池的工作主要是控制运行的线程的数量，处理过程中将任务放入队列，然后在线程创建后启动这些任务，如果线程数量超过了最大数量，超出数量的线程排队等候
+        等其他线程执行完毕，再从队列中取出任务来执行
+        假设4核八线程，每个线程占一个cpu，省略了上下文开销
+        主要特点：线程复用，控制最大并发数，管理线程
+        优势：
+            1.降低资源消耗，重复利用已创建的线程，降低线程创建和销毁造成的消耗
+            2.提高响应速度，当任务到达时，任务可以不需要等到线程创建就能执行
+            3.提高线程的可管理性，线程时稀缺资源，如果无节制的创建，不仅会消耗系统资源，还会降低系统稳定性，使用线程池可以统一管理，分配，调优和监控
+    2.线程池如何使用？
+    3.几个重要参数介绍？
+    4.线程池的底层工作原理？
     
+## 47 线程池三个常用方式 - 2.线程池如何使用？
+    1.java中线程池是通过Executor框架实现的，该框架中用到了Executor，Executors，ExecutorService，ThreadPoolExecutor等类
+    2.重要：
+        Executors
+        ThreadPoolExecutor
+    3.编码实现：
+        ·了解
+            Executors.newScheduledThreadPool() 带调度的，线程池中设置参数，每间隔几秒钟执行一次
+            java8新出 - Executors.newWorkStealingPool(int) 使用目前机器上可用的处理器作为他的并行级别
+        ·重点
+            ·Executors.newFixedThreadPool(int)      一池固定线程
+                源码：return new ThreadPoolExecutor(nThreads, nThreads,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>());
+                常用：执行长期任务，性能好
+                特点：
+                    ·创建一个定长线程池，可控制线程最大并发数，超出的线程会在队列中等待
+                    ·创建的线程池corePoolSize,maximumPoolSize是相等的，使用的是LinkedBlockingQueue阻塞队列
+            ·Executors.newSingleThreadExecutor()    一池一线程
+                源码：return new FinalizableDelegatedExecutorService(new ThreadPoolExecutor(1, 1,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>()));
+                常用：一个任务一个任务执行
+                特点：
+                    ·单线程化线程池，保证所有任务按顺序执行
+                    ·创建的线程池corePoolSize,maximumPoolSize都等于1，使用的是LinkedBlockingQueue阻塞队列
+            ·Executors.newCachedThreadPool()        一池多线程
+                源码：return new ThreadPoolExecutor(0, Integer.MAX_VALUE,60L, TimeUnit.SECONDS,new SynchronousQueue<Runnable>());
+                常用：执行很多短期异步小程序或者负载较轻的服务器
+                特点：
+                    ·缓存线程池，可灵活回收线程，不够则新建
+                    ·maximumPoolSize都等于Integer最大值
+                    ·SynchronousQueue来个任务就创建线程运行，超过60s空闲，销毁现场
+        ·以上三个源码中都是：ThreadPoolExecutor
+            new ThreadPoolExecutor(0, Integer.MAX_VALUE,60L, TimeUnit.SECONDS,new SynchronousQueue<Runnable>())
     
-## 47 线程池三个常用方式
-## 48 线程池七大参数入门简介
+## 48 线程池七大参数入门简介，阿里，美团，百度
+    
+    1.为什么程序对外接口只开放五个参数
+    2.源码跟踪：
+        public ThreadPoolExecutor(int corePoolSize,
+            int maximumPoolSize,
+            long keepAliveTime,
+            TimeUnit unit,
+            BlockingQueue<Runnable> workQueue,
+            ThreadFactory threadFactory,
+            RejectedExecutionHandler handler)
+    
 ## 49 线程池七大参数深入介绍
+
+    1.int corePoolSize,                     线程池中的常驻核心线程数，{都线程被占满了就将任务放到队列缓存，当队列缓存都被占满了，就需要添加线程到最大值maximumPoolSize加班}
+        当调用一个execute方法添加一个请求任务时，线程池会做如下判断：
+            1.当前运行线程数 < corePoolSize  新创建线程执行任务
+            2.当前运行线程数 >= corePoolSize 将任务放入队列
+            3.BlockingQueue满了并且 当前运行线程数 < maximumPoolSize 创建非核心线程执行这个任务，注意：多出来的任务会直接使用此线程，而不是排队
+            4.BlockingQueue满了并且 当前运行线程数 >= maximumPoolSize 线程池会启动饱和拒绝策略来执行
+    2.int maximumPoolSize,                  线程池中能够容纳同时执行的最大线程数，此值必须大于等于1
+    3.long keepAliveTime,                   多余的空闲线程的存活时间：当线程池数量超过corePoolSize时，空闲时间达到keepAliveTime，多余空闲线程会被销毁直到只剩下corePoolSize个线程为止
+    4.TimeUnit unit,                        keepAliveTime的单位
+    5.BlockingQueue<Runnable> workQueue,    任务队列，被提交但是尚未被执行的任务
+    6.ThreadFactory threadFactory,          表示生成线程池中工作线程的线程工厂，用于创建线程。(一般用默认的即可)
+    7.RejectedExecutionHandler handler      拒绝策略，表示当队列满了并且工作线程大于等于线程池的最大线程数maximumPoolSize
+
 ## 50 线程池底层工作原理
+
+    看图片A50
+    
 ## 51 线程池的四种拒绝策略理论简介
 ## 52 线程池实际中使用哪个
 ## 53 线程池的手写改造和拒绝策略

@@ -792,7 +792,7 @@
     
     接67：
         -XX:+PrintGCDetails 【重点】配图A68
-        * VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails
+         * VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails
          * 1.设置堆最大为 10m
          * 2.在main函数中申请50m内存的结果
          * 3.执行结果
@@ -833,8 +833,61 @@
         
     
 ## 69 常用基础参数SurvivorRatio
+    
+    -接68：
+        -XX:SurvivorRatio   幸存区
+            设置新生代中eden和s0/s1空间的比例
+            默认：-XX:SurvivorRatio=8，Eden：S0:S1 = 8:1:1
+            例如：-XX:SurvivorRatio=4，Eden：S0:S1 = 4:1:1
+                即SurvivorRatio的值就是eden所占的比，S0/S1相同
+            示例：在启动的时候可以加上看结果 -XX:+UseSerialGC 一定使用串行垃圾收集器
+            * 1.不加幸存区比例：VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseSerialGC
+             *     def new generation   total 3072K, used 1703K [0x00000000ff600000, 0x00000000ff950000, 0x00000000ff950000)
+                 *   eden space 2752K,  61% used [0x00000000ff600000, 0x00000000ff7a9e18, 0x00000000ff8b0000)
+                 *   from space 320K,   0% used [0x00000000ff8b0000, 0x00000000ff8b0000, 0x00000000ff900000)
+                 *   to   space 320K,   0% used [0x00000000ff900000, 0x00000000ff900000, 0x00000000ff950000)
+                 *  tenured generation   total 6848K, used 0K [0x00000000ff950000, 0x0000000100000000, 0x0000000100000000)
+             *      默认 约为8:1:1
+             * 2.添加加幸存区比例：VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseSerialGC -XX:SurvivorRatio=4
+             *  def new generation   total 2880K, used 1694K [0x00000000ff600000, 0x00000000ff950000, 0x00000000ff950000)
+             *   eden space 2368K,  71% used [0x00000000ff600000, 0x00000000ff7a7850, 0x00000000ff850000)
+             *   from space 512K,   0% used [0x00000000ff850000, 0x00000000ff850000, 0x00000000ff8d0000)
+             *   to   space 512K,   0% used [0x00000000ff8d0000, 0x00000000ff8d0000, 0x00000000ff950000)
+             *  tenured generation   total 6848K, used 0K [0x00000000ff950000, 0x0000000100000000, 0x0000000100000000)
+             *      约为4:1:1
+                          
 ## 70 常用基础参数NewRatio
+
+    -接69：
+        -XX:NewRatio 一般不会调整，面试用
+            配置年轻代与老年代在堆结构中的占比
+            默认：-XX:NewRatio=2 新生代占1，老年代占2，年轻代占整个堆的1/3
+            假如：-XX:NewRatio=4 新生代占1，老年代占4，年轻代占整个堆的1/5
+            比较：一定使用串行垃圾收集器 -XX:+UseSerialGC
+                 * 1.不加比例：VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseSerialGC
+                  *    def new generation   total 3072K, used 1703K [0x00000000ff600000, 0x00000000ff950000, 0x00000000ff950000)
+                  *   eden space 2752K,  61% used [0x00000000ff600000, 0x00000000ff7a9e08, 0x00000000ff8b0000)
+                  *   from space 320K,   0% used [0x00000000ff8b0000, 0x00000000ff8b0000, 0x00000000ff900000)
+                  *   to   space 320K,   0% used [0x00000000ff900000, 0x00000000ff900000, 0x00000000ff950000)
+                  *  tenured generation   total 6848K, used 0K [0x00000000ff950000, 0x0000000100000000, 0x0000000100000000)
+                  *      约为 3072K/6848K 约等于1:2
+                  * 2.添加比例：VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+UseSerialGC -XX:NewRatio=8
+                             def new generation   total 1856K, used 1658K [0x00000000ff600000, 0x00000000ff800000, 0x00000000ff800000)
+                             eden space 1664K,  99% used [0x00000000ff600000, 0x00000000ff79e940, 0x00000000ff7a0000)
+                             from space 192K,   0% used [0x00000000ff7a0000, 0x00000000ff7a0000, 0x00000000ff7d0000)
+                             to   space 192K,   0% used [0x00000000ff7d0000, 0x00000000ff7d0000, 0x00000000ff800000)
+                             tenured generation   total 8192K, used 0K [0x00000000ff800000, 0x0000000100000000, 0x0000000100000000)
+                  *      约为1856K/8192K 约等于1:4
+
 ## 71 常用基础参数Max Tenuring Threshold
+    
+    -接70：
+        -XX:MaxTenuringThreshold = 设置垃圾最大年龄，从新生代到老生代最少要逃过15次垃圾回收
+            默认：-XX:MaxTenuringThreshold=15
+            假设：-XX:MaxTenuringThreshold=0，则新生区对象不会经过Survivor区，直接进入老年代，对于老年代比较多的应用，可以提高效率，若将此值设置为一个较大值，则年轻对象
+                会在survior区进行多次复制，这样可以增加对象在年轻代的存活时间，增加年轻代即被回收的概论
+            java8设置限制：必须在0-15
+            
 ## 72 强引用
 ## 73 软引用
 ## 74 弱引用

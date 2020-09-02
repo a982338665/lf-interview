@@ -572,7 +572,7 @@
                     at java.lang.Thread.run(Thread.java:748)
             Found 1 deadlock.
     
-## 56 JVM-GC下半场技术加强说明和前提知识要求
+## 56 JVM-GC下半场技术加强说明和前提知识要求 以下都基于java8
     
     1.多线程
     2.jvm调优
@@ -616,15 +616,222 @@
                     4.本地方法栈中JIN（Native方法）引用的对象          
     
 ## 59 JVM的标配参数和X参数
+
+    1.jvm参数调优和配置，怎么查看系统默认值？
+        -Xms 初始堆空间
+        -Xmx 堆空间最大值
+        -Xss 初始栈空间
+    2.初始值调到期望值
+    3.jvm参数类型：
+        1.标配参数：java8-12一直存在的参数
+            java -version
+            java -help
+            java -showversion
+        2.X参数-了解
+            -Xint   解释执行
+            -Xcomp  第一次使用就编译成本地代码
+            -Xmixed 混合模式
+        3.XX参数-重要
+            ·boolean值
+            ·KV设值
+            ·jinfo举例，如何查看当前运行程序的配置
+            ·题外话-坑题目
+    4.命令测试：-了解
+        C:\Users\Administrator>java -version
+        java version "1.8.0_231"
+        Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+        Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)    虚拟机HotSpot，mixed mode混合模式
+        C:\Users\Administrator>java -Xint -version
+        java version "1.8.0_231"
+        Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+        Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)    虚拟机HotSpot，interpreted mode解释执行
+        C:\Users\Administrator>java -Xcomp -version
+        java version "1.8.0_231"
+        Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+        Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)    虚拟机HotSpot，compiled mode编译执行
+    
 ## 60 JVM的XX参数及布尔类型
+
+    -XX:+或-某个属性
+        +表示开启
+        -表示关闭
+    case：
+        是否打印gc收集细节: 
+            -XX:+PrintGCDetails
+            -XX:-PrintGCDetails
+        是否使用串行垃圾回收器:
+            -XX:+UseSerialGC 
+            -XX:-UseSerialGC 
+    如何查看正在运行中的java程序，他的某个jvm参数是否开启，具体值是多少？  
+        获取进程号：jps -l
+        查看某进程是否添加PrintGCDetails参数：jinfo -flag PrintGCDetails 【进程号】
+        查看某进程所有参数：jinfo -flags【进程号】
+        示例：
+            ===========================================================
+            D:\go-20191030\interview>jps -l
+            480
+            7568 A20200814_bili第二季.code.A60_JVM
+            5964 org.jetbrains.jps.cmdline.Launcher
+            7516 sun.tools.jps.Jps
+            ===========================================================
+            D:\go-20191030\interview>jinfo -flag PrintGCDetails 7568//获取指定参数
+            -XX:-PrintGCDetails //减号表示关闭，未开启
+            ===========================================================
+            D:\go-20191030\interview>jinfo -flags 7516  //获取所有参数信息
+            Attaching to process ID 7516, please wait...
+            Debugger attached successfully.
+            Server compiler detected.
+            JVM version is 25.231-b11
+            //虚拟机默认，若有自己加的会将参数值覆盖
+            Non-default VM flags: -XX:CICompilerCount=3 -XX:InitialHeapSize=201326592 -XX:MaxHeapSize=3191865344 -XX:MaxNewSize=1063
+            780352 -XX:MinHeapDeltaBytes=524288 -XX:NewSize=67108864 -XX:OldSize=134217728 -XX:+PrintGCDetails -XX:+UseCompressedCla
+            ssPointers -XX:+UseCompressedOops -XX:+UseFastUnorderedTimeStamps -XX:-UseLargePagesIndividualAllocation -XX:+UseParalle
+            lGC
+            //Command line只自己加的
+            Command line:  -XX:+PrintGCDetails -javaagent:D:\install-soft\ideaIU-2019.2.1.win\lib\idea_rt.jar=52067:D:\install-soft\
+            ideaIU-2019.2.1.win\bin -Dfile.encoding=UTF-8
+    启动添加VM options参数：
+        -XX:+PrintGCDetails 
+          
 ## 61 JVM的XX参数及设值类型
+
+    -XX:属性key=属性value
+    case：
+        -XX:MetaspaceSize=128m          元数据区大小
+        -XX:MaxTenuringThreshold=15     新生代到老生代 活过15次才能升到老年代
+    查看运行中程序的MetaspaceSize：
+        jps -l
+        jinfo -flag MetaspaceSize 7568
+        示例：
+            D:\go-20191030\interview>jinfo -flag MetaspaceSize 6924
+            -XX:MetaspaceSize=21807104  //元空间初始值约为21M左右
+    VM options设置值：
+        -XX:MetaspaceSize=1024M
+        
 ## 62 JVM的XX参数及Xms，Xmx坑题
+
+    两个经典参数：-Xms -Xmx 不属于boolean，而是属于kv设值，是别名
+        -Xms1024M 等价于 -XX:InitialHeapSize=1024M   初始化堆内存  默认为物理内存的1/64，jvm在安装时根据机器的物理大小进行的初始化
+        -Xmx1024M 等价于 -XX:MaxHeapSize=1024M       最大堆内存    默认为物理内存的1/4，jvm在安装时根据机器的物理大小进行的初始化
+    -Xss 为jvm启动的每个线程分配的内存大小，默认JDK1.4中是256K，JDK1.5+中是1M
+    -Xmn2g：设置年轻代大小为2G。整个堆大小=年轻代大小 + 年老代大小 + 持久代大小。持久代一般固定大小为64m，所以增大年轻代后，将会减小年老代大小。
+        此值对系统性能影响较大，Sun官方推荐配置为整个堆的3/8。
+
 ## 63 JVM盘点家底查看初始默认值
+
+    1.第一种：
+        jps -l
+        jinfo -flag 参数 进程号
+        jinfo -flags 进程号
+    2.第二种：
+        -XX:+PrintFlagsInitial 查看安装后默认初始值 -特别重要：盘点jvm初始化参数
+            java -XX:+PrintFlagsInitial -version
+            java -XX:+PrintFlagsInitial
+        -XX:+PrintFlagsFinal 查看修改后的默认初始值 -特别重要：盘点jvm初始化参数
+            java -XX:+PrintFlagsFinal -version
+            java -XX:+PrintFlagsFinal
+                     bool MaxFDLimit                                = true                                {product}     //boolean类型
+                    uintx MaxHeapFreeRatio                          = 100                                 {manageable}  //=表示kv设值类型
+                    uintx MaxHeapSize                              := 3191865344                          {product}     //:=表示被修改过的值（人为或者jvm修改的）
+        
 ## 64 JVM盘点家底查看修改变更值
+
+    PrintFlagsFinal举例：运行java的时候同时打印出参数
+            D:\go-20191030\interview\src\main\java\A20200814_bili第二季\code>more T.java
+            D:\go-20191030\interview\src\main\java\A20200814_bili第二季\code>java -XX:+PrintFlagsFinal -XX:MetaspaceSize=512M T.java
+    PrintCommandLineFlags：
+            D:\go-20191030\interview\src\main\java\A20200814_bili第二季\code>java -XX:+PrintCommandLineFlags -version
+                -XX:InitialHeapSize=199473984 -XX:MaxHeapSize=3191583744 -XX:+PrintCommandLineFlags -XX:+UseCompressedClassPointers -XX:+UseCompressedOops 
+                -XX:-UseLargePagesIndividualAllocation -XX:+UseParallelGC//UseParallelGC默认的垃圾回收器，并行GC
+                java version "1.8.0_231"
+                Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+                Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+                                                         
 ## 65 堆内存初始大小快速复习 
+    
+    1.jvm常用的配置参数有哪些？
+        -Xms 初始堆内存  默认为物理内存的1/64,等价于 -XX:initialHeapSize 
+        -Xmx 最大堆内存  默认为物理内存的1/4,等价于 -XX:MaxHeapSize
+        -Xmn 新生代
+        看65,66，...
+    
 ## 66 常用基础参数栈内存Xss
+      
+    接65：【栈管运行-堆管存储】
+        -Xss 设置单个线程栈空间大小，一般默认为512k-1M，线程私有，管运行，等价于 -XX:ThreadStackSize
+            查看进程号 jsp -l
+            查看运行程序的这个值：jinfo -flag ThreadStackSize 进程号
+                运行后得到 -XX:ThreadStackSize=0 
+                查看官网可知，当-XX:ThreadStackSize=0时就代表它要取默认值，即512k-1M
+                Linux系统默认是1M=1024k
+    
 ## 67 常用基础参数元空间MetaspaceSize
+    
+    接66:    -一般不用调
+        -Xmn 设置年轻代大小，一般不用调，使用默认即可（新生代1/3,老年代2/3）
+        -XX:MetaspaceSize 设置元空间大小
+            元空间本质和永久代类似，都是对jvm规范中方法区的实现。不过其最大区别在于，【元空间并不在虚拟机中，而是使用本地内存】
+            java8元空间取代了永久代
+            因此默认情况下，元空间大小仅受本地内存限制
+            出现的OOM异常：java.lang.OutOfMemoryError: Metaspace
+                虽然仅受本地内存限制，但是还是会OOM，通过命令查看默认值并且修改
+                他的默认值不会因为内存的关系而改变，所以一般在调优时，可以将其设置大一点
+                jinfo -flag MetaspaceSize 进程号
+                    -XX:MetaspaceSize=21807104 约等于20M
+            修改命令：
+                VM options添加：-Xms128m -Xmx4096m -Xss1024k -XX:MetaspaceSize=512m -XX:+PrintCommandLineFlags -XX:+PrintGCDetails -XX:+UseSerialGC
+                -Xms128m                        初始堆
+                -Xmx4096m                       最大堆
+                -Xss1024k                       线程栈
+                -XX:MetaspaceSize=512m          元数据区
+                -XX:+PrintCommandLineFlags      精简的命令行信息
+                -XX:+PrintGCDetails             垃圾回收详情
+                -XX:+UseSerialGC                串行垃圾回收器（默认是并行垃圾回收器：：-XX:+UseParallelGC）
+
 ## 68 常用基础参数PrintGCDetails回收前后对比
+    
+    接67：
+        -XX:+PrintGCDetails 【重点】配图A68
+        * VM options: -Xms10m -Xmx10m -XX:+PrintGCDetails
+         * 1.设置堆最大为 10m
+         * 2.在main函数中申请50m内存的结果
+         * 3.执行结果
+         *      [GC (Allocation Failure) [PSYoungGen: 1550K->488K(2560K)] 1550K->668K(9728K), 0.0009466 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+         *      //++++++++++++++++++++++++++++++++++++++++++++++
+         *      [GC 表示在新生代
+         *      (Allocation Failure) 内存申请失败
+         *      [PSYoungGen: GC类型-新生代
+         *      1550K：gc前新生代的内存占用
+         *      ->488K：gc后新生代的内存占用
+         *      (2560K)]：新生代总共大小
+         *      1550K：gc前jvm堆内存占用
+         *      ->668K:：gc后jvm堆内存使用
+         *      (9728K)：jvm堆总大小
+         *      0.0009466 secs]：gc耗时
+         *      [Times: user=0.00：gc用户耗时
+         *      sys=0.00,：gc系统耗时
+         *      real=0.00 secs]：gc实际耗时
+         *      //++++++++++++++++++++++++++++++++++++++++++++++
+         *      [GC (Allocation Failure) [PSYoungGen: 488K->504K(2560K)] 668K->684K(9728K), 0.0004350 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+         *      [Full GC (Allocation Failure) [PSYoungGen: 504K->0K(2560K)] [ParOldGen: 180K->609K(7168K)] 684K->609K(9728K), [Metaspace: 3126K->3126K(1056768K)], 0.0058359 secs] [Times: user=0.05 sys=0.00, real=0.01 secs]
+         *      //++++++++++++++++++++++++++++++++++++++++++++++
+         *      [Full GC 表示老生代，同理
+         *      //++++++++++++++++++++++++++++++++++++++++++++++
+         *      [GC (Allocation Failure) [PSYoungGen: 0K->0K(2560K)] 609K->609K(9728K), 0.0003462 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+         *      [Full GC (Allocation Failure) [PSYoungGen: 0K->0K(2560K)] [ParOldGen: 609K->591K(7168K)] 609K->591K(9728K), [Metaspace: 3126K->3126K(1056768K)], 0.0056701 secs] [Times: user=0.00 sys=0.00, real=0.01 secs]
+         *      Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+         *      	at A20200814_bili第二季.code.A68_JVMPrintGCDetails.main(A68_JVMPrintGCDetails.java:19)
+         *      Heap
+         *       PSYoungGen      total 2560K, used 104K [0x00000000ffd00000, 0x0000000100000000, 0x0000000100000000)
+         *        eden space 2048K, 5% used [0x00000000ffd00000,0x00000000ffd1a208,0x00000000fff00000)
+         *        from space 512K, 0% used [0x00000000fff00000,0x00000000fff00000,0x00000000fff80000)
+         *        to   space 512K, 0% used [0x00000000fff80000,0x00000000fff80000,0x0000000100000000)
+         *       ParOldGen       total 7168K, used 591K [0x00000000ff600000, 0x00000000ffd00000, 0x00000000ffd00000)
+         *        object space 7168K, 8% used [0x00000000ff600000,0x00000000ff693d38,0x00000000ffd00000)
+         *       Metaspace       used 3210K, capacity 4496K, committed 4864K, reserved 1056768K
+         *        class space    used 345K, capacity 388K, committed 512K, reserved 1048576K
+        
+    
 ## 69 常用基础参数SurvivorRatio
 ## 70 常用基础参数NewRatio
 ## 71 常用基础参数Max Tenuring Threshold

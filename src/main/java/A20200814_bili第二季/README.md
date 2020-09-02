@@ -409,7 +409,7 @@
     
 ## 45 Callable接口
 
-    1.线程创建的方式：
+    1.线程创建的方式：工作中常用的只有3和4
         ·集成Thread类
         ·实现Runnable接口
             - 没有返回值
@@ -497,10 +497,81 @@
     看图片A50
     
 ## 51 线程池的四种拒绝策略理论简介
+    
+    1.生产上的线程池配置？
+    5.线程池的四种拒绝策略？
+        1.是什么？
+            ·等待队列排满，塞不下新任务 同时 线程池中的max也达到了最大值，无法为新任务服务，此时就配合拒绝策略来处理问题           
+        2.jdk内置的拒绝策略
+            ·AbortPolicy（默认）：直接抛出RejectedExecutionException
+            ·CallerRunsPolicy：“调用者运行”一种调节机制，不会抛弃任务，也不会抛弃异常，而是将某些任务回退给调用者，从而降低新任务的流量
+            ·DiscardOldestPolicy：抛弃队列中等待最久的任务，然后吧当前任务加入队列中，尝试再次提交当前任务
+            ·DiscardPolicy：直接丢弃任务，不处理，也不抛异常，若允许任务丢失，此方案最合适
+        3.以上内置拒绝策略均实现了RejectedExecutionHandler接口
+    
 ## 52 线程池实际中使用哪个
+
+    1.工作中单一，固定数，可变线程池你主要用哪个？
+        一个都不用，使用自定义的。
+        阿里巴巴开发手册1.4：并发处理章节中指出原因：
+            线程池不允许使用Executors创建，而是通过ThreadPoolExecutor的方式，这样的处理才能让人更加明白线程池的运行规则，避免资源耗尽的风险
+            Executors创建线程的弊端：
+                1.FixThreadPool 和 SingleThreadPool
+                    允许【请求队列】的长度为Integer.MAX_VALUE，可能会堆积大量请求从而导致OOM
+                    LinkedBlockingQueue有界队列，但是最大值为Integer.MAX_VALUE (约21亿)
+                2.CachedThreadPool 和 ScheduledThreadPool
+                    运行的【创建线程】数量为Integer.MAX_VALUE，可能会创建大量线程从而导致OOM
+    
 ## 53 线程池的手写改造和拒绝策略
+
+    1.工作中如何使用线程池？是否有过自定义线程池使用？
+        工作中很少用抛异常拒绝策略
+    
 ## 54 线程池配置合理线程数
+
+    0.查看cpu核数：System.err.println(Runtime.getRuntime().availableProcessors());
+    1.如何配置线程池的最佳数量，合理配置线程池怎么考虑的？
+        第一步：查看自己服务器信息核数
+        第二步：从业务角度出发，分为两种
+                CPU密集型：该任务需要大量运算，没有阻塞，cpu一直全速运行，【while死循环-cpu密集】
+                    只有在真正的多核cpu上，才可能得到加速（通过多线程）  
+                    在单核cpu上，无论怎么模拟多线程任务都不会加速，因为cpu能力是固定的
+                    cpu密集型任务配置尽可能少的线程数量
+                    一般公式：CPU核数+1个线程的线程池 （每核一个尽量减少切换）         
+                IO密集型：两种【磁道取数据-mysql，redis等-io密集】
+                    1.看书经验：
+                        IO密集型任务线程并不是一直在执行任务，则应配置尽可能多的线程，如cpu核数*2
+                    2.实战生产经验：
+                        任务需要大量io，即大量阻塞
+                        在单线程上运行io密集型的任务会导致浪费大量cpu运算能力浪费在等待上
+                        所以io密集任务中使用多线程能大大加速程序运行，即使在单核cpu上，这种加速就是利用被浪费掉的阻塞时间
+                        io密集型时，大部分线程都阻塞，故需要多配置线程数
+                        参考公式：cpu核数/(1-阻塞系数)
+                        阻塞系数范围：0.8-0.9之间
+                        例如八核cpu：8/(1-0.9)=80个线程                        
+
 ## 55 死锁编码及定位分析
+
+    1.产生死锁的原因：自己持有A想获得B，自己获得B想持有A
+        ·两个或两个以上的进程在执行过程中，因争抢资源而造成的一种互相等待的现象。 
+        ·系统资源充足，能够满足各个进程，死锁出现概率就底，否则就可能因争夺有限资源陷入死锁
+    2.代码 
+    3.解决思路:
+        用到的分析命令：
+        jps查看进程号：jps -l
+        查看堆栈信息：jstack 【上一步查询的进程号】
+            "lockB":
+                    at A20200814_bili第二季.code.HoldLock.run(A55_DeadLock.java:18)
+                    - waiting to lock <0x0000000780ac5620> (a java.lang.String) 等5620
+                    - locked <0x0000000780ac5658> (a java.lang.String)          锁5658
+                    at java.lang.Thread.run(Thread.java:748)
+            "lockA":
+                    at A20200814_bili第二季.code.HoldLock.run(A55_DeadLock.java:18)
+                    - waiting to lock <0x0000000780ac5658> (a java.lang.String) 等5658
+                    - locked <0x0000000780ac5620> (a java.lang.String)          锁5620
+                    at java.lang.Thread.run(Thread.java:748)
+            Found 1 deadlock.
+    
 ## 56 JVM-GC下半场技术加强说明和前提知识要求
 ## 57 JVM-GC快速回顾复习串讲
 ## 58 谈谈你对GCRoots的理解

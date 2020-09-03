@@ -967,12 +967,95 @@
         在日常程序编写中，我们对一些不重要的数据，例如缓存数据等，可以采用软引用，弱引用可以加快对象所占用的内存的回收速度
         
 ## 81 SOFE-StackOverflowError
+
+    异常：Exception in thread "main" java.lang.StackOverflowError
+    模拟代码：方法栈溢出：递归调用
+    栈空间默认：512k-1024k
+    类层级：
+        Throwable：
+            Error：
+                VirtualMachineError：
+                    java.lang.StackOverflowError
+                    java.lang.OutOfMemoryError
+            Exception： 
+    所以StackOverflowError和OutOfMemoryError属于错误，而非异常
+    
 ## 82 OOM-java heap space
+
+    异常：Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+    模拟代码：堆溢出：字符串无限累加/无线new对象/或者申请一个大于最大堆内存的空间new byte[]
+
 ## 83 OOM-GC overhead limit exceeded
-## 84 OOM-Direct buffer memory
-## 85 OOM-unable to create new native thread故障演示
+    
+    异常：java.lang.OutOfMemoryError: GC overhead limit exceeded
+    解释：gc回收超过异常警戒（内存急剧上升，大多数资源都用来做垃圾回收了，回收结果也比较差）
+        gc回收时间过长抛出，过长的定义是，超过98%的时间都用来做gc，并且回收了不到2%的堆内存，连续多次gc都只回收了不到2%的极端情况下才会抛出。
+        加入不抛出此错误会发生什么？
+        gc清理的那小快内存很快会被再次填满，迫使gc再次执行，这样就形成了恶性循环
+    造成的结果：cpu使用率一直100%，但是gc却没有任何成果，事倍功一小半
+    模拟代码：无限循环往常量池中添加字符串 
+    
+## 84 OOM-Direct buffer memory -直接内存溢出
+    
+    异常：Exception in thread "main" java.lang.OutOfMemoryError: Direct buffer memory
+    解释：直接内存挂了，（元空间并不在虚拟机中，而是使用本地内存，此处挂的就是本地内存，主要是由nio引起的）
+    导致原因：
+        写nio程序经常使用到ByteBuffer来读取或者写入数据，这是一种基于通道和缓冲区的I/O方式
+        他可以使用native函数库直接分配堆外内存，然后通过一个存储在java堆里面的DirectByteBuffer对象作为这块内存的引用进行操作
+        这样能在一些场景中显著提高性能，因为避免了在Java堆和native堆中来回复制数据
+            ·ByteBuffer.allocate(capability)分配jvm堆内存，属于gc管辖范围，需要拷贝，所以速度较慢
+            ·ByteBuffer.allocateDirect(capability)分配os本地内存，不属于gc管辖，不需要内存拷贝，速度快
+            但是如果不断分配本地内存，堆内存很少使用，那么jvm就不会执行gc，DirectByteBuffer对象就不会被回收
+            此时堆内存充足，但是本地内存可能使用光了，再次尝试分配本地内存就会出现此异常，程序就崩溃了
+    总结：引用在jvm，实例在本地内存，避免了来回复制
+    模拟代码：
+        ·ByteBuffer.allocateDirect(capability)分配os本地内存，不属于gc管辖，不需要内存拷贝，速度快
+    
+## 85 OOM-unable to create new native thread故障演示 
+
+    异常：不能创建新的本地线程
+    解释：一个系统能够创建多少个线程是有上限的，超过报这个错误
+    场景：高并发请求服务器时，常见此异常，与对应的平台有关
+    导致原因：
+        1.一个应用创建了太多线程，超过系统承载极限
+        2.服务器不允许应用创建过多线程，linux系统默认允许单个进程创建的线程数是1024个，应用创建超过这个数量，就会报此错误，实际中大概到2/3的时候就会报错，大概900多
+    解决：
+        1.降低创建线程数量
+        2.对于有的应用确实不够，需要创建很多线程，则需要修改linux服务器配置，调高进程的默认线程数
+    模拟代码：
+        while (true){new Thread().start();}
+        liunx演示：
+            javac xxx.java
+            java 包名.类名 
+            运行后报错，无法退出
+            ps -ef |grep java
+            kill -9 进程号
+        
 ## 86 OOM-unable to create new native thread上限调整
+
+    1.非root用户登录linux系统进行测试
+        用户：zhangsan
+    2.服务器级别的调优参数：
+        查看：ulimit -u
+        文件：vim /etc/security/limits.d/90-nproc.conf
+            #*          soft    nproc     4096          我的服务器非1024是4069
+            #root       soft    nproc     unlimited     root用户无限制
+            zhangsan    soft    nproc     100000        给张三用户添加限制
+
 ## 87 OOM-Metaspace
+
+    1.使用 java -XX:+PrintFlagsInitial命令查看本机的初始化参数，-XX:MetaspaceSize为218103768 约为21M
+    2.介绍：java8之后使用元空间替代永久代
+        metaspace是方法区在hotspot中的实现，他与持久代最大的区别在于Metaspace不在虚拟机内存中，而是在本地内存中
+        即在java8中class metadata被存储在叫做Metaspace的native memory中
+        永久代中存放了以下信息：（java8后被Metaspace替代）
+            ·虚拟机加载的类信息
+            ·常量池
+            ·静态变量
+            ·即时编译后的代码
+    3.模拟代码：
+        模拟Metaspace溢出，不断进行类加载即可
+
 ## 88 垃圾收集器回收种类
 ## 89 串行，并行，并发G1四大垃圾回收方式
 ## 90 如何查看默认的垃圾收集器

@@ -1057,14 +1057,123 @@
         模拟Metaspace溢出，不断进行类加载即可
 
 ## 88 垃圾收集器回收种类
+    
+    1.垃圾回收算法和垃圾回收器的关系？分别是什么？
+        1.GC算法：包含引用计数，复制，标清，标整，他是内存回收的方法论，而垃圾收集器就是算法的落地实现
+        2.目前为止还没有完美的收集器出现，只能根据不同的场景选择合适的收集器，进行分代收集
+        3.四种主要的收集器
+    2.垃圾回收的方式：- 四种主要的收集器
+        1.Serial    - 串行回收
+            ·为单线程环境设计且只使用一个线程进行垃圾回收，会暂停所有的用户线程，所以不适合服务器环境，【一人扫地，都出去】
+        2.Parallel  - 并行回收
+            ·多个垃圾收集线程并行工作，此时用户线程时暂停的，适用于科学计算，大数据处理首台处理等弱交互场景，【多人扫地，都出去】
+        3.CMS       - 并发标记清除 -会产生内存碎片
+            ·用户线程和垃圾收集线程同时执行，（不一定是并行，可能会交替执行），不需要停顿用户的线程，互联网公司多用他，【多人扫地，不用出去，先换地工作，扫完，再换回来】
+                适用对响应时间有要求的场景 - 强交互场景
+        4.G1（Garbage） - G1，java10以前就这些，java10以后多了ZGC
+           ·jdk7诞生，java8开始使用
+           ·G1将堆内存分割为不同的区域，然后并发的对其进行垃圾回收【分割，并发回收】
+           
 ## 89 串行，并行，并发G1四大垃圾回收方式
+    
+    1.互联网公司基本上要改为：CMS垃圾回收器，
+    2.java8之后可能会主要用G1
+
 ## 90 如何查看默认的垃圾收集器
-## 91 JVM默认的垃圾收集器有哪些
-## 92 GC-7大垃圾收集器概述
+    
+    1.怎么查看服务器默认垃圾收集器？
+        java -XX:+PrintCommandLineFlags -version
+            -XX:InitialHeapSize=199473984 -XX:MaxHeapSize=3191583744 -XX:+PrintCommandLineFlags -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:-UseLar
+            gePagesIndividualAllocation -XX:+UseParallelGC【java8默认使用并行垃圾回收器】
+            java version "1.8.0_231"
+            Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+            Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+        -XX:+UseParallelGC
+        -XX:+UseSerialGC        串行垃圾收集器
+    2.生产上如何配置垃圾收集器？
+    3.谈谈对垃圾收集器的理解？
+    
+## 91 JVM默认的垃圾收集器有哪些 - java8里面6种，一种没了
+
+    -XX:+UseSerialGC        串行垃圾收集器
+    -XX:+UseSerialOldGC     串行垃圾收集器老生代 - 在java8后已经没了
+    -XX:+UseParallelGC      并行垃圾收集器：包含新生代及老年代
+    -XX:+UseConcMarkSweepGC 并发标记清除收集器-CMS简写
+    -XX:UseParNewGC         新生代的垃圾回收-并行收集器
+    -XX:UserParallelOldGC   老生代的垃圾回收-并行收集器
+    -XX:UseG1GC             分割-并行-回收 
+    
+    查看运行程序中的垃圾收集器：
+        jps -l
+        jinfo -flag UseSerialGC 进程号
+        -XX:+UseSerialGC 加号表示用了
+        
+## 92 GC-7大垃圾收集器概述 - 重要
+    
+    分代收集：
+        新生代 使用：serial,ParNew,parallel
+        老年代使用：CMS，serialOld,ParalllelOld
+        两个都包含：G1
+
 ## 93 GC-约定参数说明
+    
+    1.部分参数预先说明：
+        ·DefNew     Default New Generation  默认新生代
+        ·Tenured    Old                     老
+        ·ParNew     Parallel New Generation 新生代 并行回收
+        ·PSYoungGen Parallel Scavenge       
+        ·ParOldGen  Parallel Old Generation 老生代 并行回收
+    2.Server/Client模式分别是什么意思？
+        D:\go-20191030\interview\src\main\java\A20200814_bili第二季\code>java -XX:+PrintCommandLineFlags -version
+        -XX:InitialHeapSize=199473984 -XX:MaxHeapSize=3191583744 -XX:+PrintCommandLineFlags -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:-UseLar
+        gePagesIndividualAllocation -XX:+UseParallelGC
+        java version "1.8.0_231"
+        Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+        Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)【Server模式】
+        1.适用范围：仅掌握Server模式即可，Client基本不用
+        2.操作系统：
+            ·32位windows：不管硬件怎么样，都使用的是Client的jvm模式
+            ·32位其他操作系统：2G内存且有2CPU时，使用Server，否则使用Client
+            ·64位：Only Server 
+    3.新生代：
+        ·串行 Serial/Serial copying
+        ·并行 ParNew
+        ·并行回收   Parallel/Parallel Scavenge
+    4.老年代
+    5.垃圾收集器配置代码总结【重要】
+    
 ## 94 GC-Serial收集器
+
+    1.串行收集器是最古老，最稳定且效率高的收集器，只使用一个线程去回收，垃圾回收的过程中可能会产生较长的停顿（stop-the-word状态）
+        在收集过程中需要暂停用户线程，对于限定单个cpu而言，没有环境交互的开销可以获得更高的单线程垃圾收集效率，因此Serial垃圾收集器
+        依然是java虚拟机运行在Client模式下的默认的新生代垃圾收集器
+    2.对应jvm参数：
+        -XX:+UseSerialGC
+    3.开启后会使用：Serial（新生代） + SerialOld（老年代）的收集器组合
+    4.表示：新生代，老年代都会使用串行垃圾回收器，新生代使用复制算法，老生代使用标记-整理算法
+    5.代码：-- VM options
+    
 ## 95 GC-ParNew收集器
+
+    1.使用多线程进行垃圾回收，回收过程中暂停用户线程
+        ParNew实际上就是Serial的多线程版本，最常见的应用场景是配合老年代的CMS 进行GC，其余的行为就跟Serial相同
+        是很多java虚拟机运行在Server模式下的默认垃圾收集器
+    2.对应jvm参数：
+        -XX:+UseParNewGC    启动这个只影响新生代的收集，不影响老年代
+    3.开启后会使用：ParNew（新生代） + SerialOld（老年代）的收集器组合，新生代使用复制算法，老生代使用标记-整理算法
+        但是,ParNew+Tenured 这样的搭配在java8中已经不再被推荐
+            Java HotSpot(TM) 64-Bit Server VM warning：
+                Using the ParNew young collector whit the Serial Old collector is depredated and whill likely be removed in a future release
+    备注：
+        -XX:ParallelGCThreads 限制线程数量，默认开启和cpu相同的线程数
+        
 ## 96 GC-Parallel收集器
+
+    1.java8默认使用
+        类似ParNew也是一个新生代垃圾收集器，使用复制算法，也是一个并行的多线程的垃圾收集器，俗称吞吐量优先收集器。
+        一句话：串行收集器在新生代，老年代的并行化
+    2.看图
+
 ## 97 GC-ParallelOld收集器
 ## 98 GC-CMS收集器
 ## 99 GC-SerialOld收集器

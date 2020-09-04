@@ -1218,17 +1218,309 @@
         ·多cpu，需要最大吞吐量，如后台计算型应用，跟前端交互少，可以允许有停顿的
             -XX:+UseParallelGC 或者 【相互激活】
             -XX:+UseParallelOldGC
-        ·多cpu，追求低停顿时间，需要快速响应，如何联网应用
+        ·多cpu，追求低停顿时间，需要快速响应，例如联网应用
             -XX:+UseConcMarkSweepGC
             -XX:+ParNewGC
     
 ## 101 GC-G1收集器
+   
+    1.G1垃圾回收器-横跨新生代，老生代 -> 面试常问【重要】
+    2.以前收集器特点
+        ·新生代和老年代是各自独立且连续的内存块
+        ·新生代收集使用单eden+S0+s进行复制算法
+        ·老年代收集必须扫描整个老年代区域
+        ·都是以尽可能少而快速的执行GC为设计原则
+    3.G1是什么（Garbage-First）
+        ·是一款面向服务端的收集器，从官网描述，应用在多处理器和大容量内存环境中，在实现高吞吐量的同时，尽可能的满足垃圾收集暂停时间的要求。还具有以下特性：
+            1.像CMS收集器一样，能与应用程序线程并发执行
+            2.整理空闲空间更快
+            3.需要更多的时间来预测GC停顿时间
+            4.不希望牺牲大量吞吐性能
+            5.不需要更大的JAVA heap
+        ·G1收集器的设计目标是取代CMS收集器，他同cms相比，在以下方面表现出色
+            1.G1是一个有整理内存过程的垃圾收集器，不会产生很多内存碎片
+            2.G1的stop-the-word（STW）更可控，G1在停顿时间上加了预测机制，用户可以指定期望停顿时间   
+        ·CMS垃圾收集器虽然减少了暂停应用的运行时间，但是他还是存在着内存碎片的问题。于是为了去除内存碎片的问题，且同时保留CMS垃圾收集器低暂停时间的优点，java7
+            发布了一个新的垃圾回收器G1.
+        ·G1在2012年在jdk1.7u4中可用，oracle官方计划在jdk9中将默认的垃圾回收器更新为G1以替代CMS。他是一款面向服务端应有的收集器，主要应用在多cpu和大内存服务器环境下
+            极大的减少垃圾收集的停顿时间，全面提升服务器性能，逐步替换java8以前的cms收集器
+        ·主要改变：-化整为零
+            Eden，Survivor，Tenured等内存区域不在是连续的了，而是变成了一个个大小一样的region，每个region从1M到32M不等。
+            一个region有可能属于eden，Survivor，Tenured内存区域
+        ·特点：
+            ·充分利用cpu，多核硬件优势，尽量缩短STW
+            ·整体采用标记整理算法，局部是通过复制算法，不会产生内存碎片
+            ·宏观上看G1不在区分新生代，老年代，把内存划分为多个独立的子区域（Regin），可以近似理解为一个围棋的棋盘
+            ·G1收集器里面将整个的内存区都混合在了一起，但其本身依然在小范围内要进行年轻代和老年代的区分，保留了新生代和老生代，但是他们
+                不再是物理隔离的，而是一部分region的集合且不需要region是连续的，也就是说依然会采用不同的gc方式来处理不同的区域
+            ·G1虽然也是分代收集器，但是整个内存分区不存在物理上的年轻代与老年代之分，也不需要完全独立的survivor堆做复制准备
+                G1只有逻辑上的分代概念，或者说每个分区都可能随着G1的运行在不同代之间前后切换
+    4.底层原理
+    5.case案例
+    6.常用配置参数（了解）
+    7.和CMS相比的优势
+    8.总结
+    
+    9.测试参数：
+        -Xms10m -Xmx10m -XX:+PrintGCDetails -XX:+PrintCommandLineFlags -XX:+UseG1GC
+    10.测试结果
+        -XX:InitialHeapSize=10485760 -XX:MaxHeapSize=10485760 -XX:+PrintCommandLineFlags -XX:+PrintGCDetails -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseG1GC -XX:-UseLargePagesIndividualAllocation 
+        [GC pause (G1 Humongous Allocation) (young) (initial-mark), 0.0017716 secs]
+           [Parallel Time: 1.2 ms, GC Workers: 4]
+              [GC Worker Start (ms): Min: 153.6, Avg: 153.7, Max: 153.8, Diff: 0.2]
+              [Ext Root Scanning (ms): Min: 0.1, Avg: 0.3, Max: 0.3, Diff: 0.2, Sum: 1.1]
+              [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+                 [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Sum: 0]
+              [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Object Copy (ms): Min: 0.7, Avg: 0.8, Max: 0.8, Diff: 0.1, Sum: 3.1]
+              [Termination (ms): Min: 0.0, Avg: 0.0, Max: 0.1, Diff: 0.1, Sum: 0.1]
+                 [Termination Attempts: Min: 1, Avg: 1.0, Max: 1, Diff: 0, Sum: 4]
+              [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.1]
+              [GC Worker Total (ms): Min: 1.0, Avg: 1.1, Max: 1.2, Diff: 0.2, Sum: 4.4]
+              [GC Worker End (ms): Min: 154.8, Avg: 154.8, Max: 154.8, Diff: 0.0]
+           [Code Root Fixup: 0.0 ms]
+           [Code Root Purge: 0.0 ms]
+           [Clear CT: 0.0 ms]
+           [Other: 0.6 ms]
+              [Choose CSet: 0.0 ms]
+              [Ref Proc: 0.1 ms]
+              [Ref Enq: 0.0 ms]
+              [Redirty Cards: 0.0 ms]
+              [Humongous Register: 0.0 ms]
+              [Humongous Reclaim: 0.0 ms]
+              [Free CSet: 0.0 ms]
+           [Eden: 4096.0K(4096.0K)->0.0B(3072.0K) Survivors: 0.0B->1024.0K Heap: 6912.1K(10.0M)->2616.1K(10.0M)]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [GC concurrent-root-region-scan-start]
+        [GC pause (G1 Humongous Allocation) (young)[GC concurrent-root-region-scan-end, 0.0034050 secs]
+        [GC concurrent-mark-start]
+        , 0.0039835 secs]
+           [Root Region Scan Waiting: 2.9 ms]
+           [Parallel Time: 0.9 ms, GC Workers: 4]
+              [GC Worker Start (ms): Min: 160.0, Avg: 160.3, Max: 160.9, Diff: 0.9]
+              [Ext Root Scanning (ms): Min: 0.0, Avg: 0.1, Max: 0.2, Diff: 0.2, Sum: 0.5]
+              [Update RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+                 [Processed Buffers: Min: 0, Avg: 0.0, Max: 0, Diff: 0, Sum: 0]
+              [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Object Copy (ms): Min: 0.0, Avg: 0.5, Max: 0.6, Diff: 0.6, Sum: 1.8]
+              [Termination (ms): Min: 0.0, Avg: 0.0, Max: 0.1, Diff: 0.1, Sum: 0.2]
+                 [Termination Attempts: Min: 1, Avg: 1.0, Max: 1, Diff: 0, Sum: 4]
+              [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [GC Worker Total (ms): Min: 0.0, Avg: 0.6, Max: 0.9, Diff: 0.9, Sum: 2.5]
+              [GC Worker End (ms): Min: 160.9, Avg: 160.9, Max: 160.9, Diff: 0.0]
+           [Code Root Fixup: 0.0 ms]
+           [Code Root Purge: 0.0 ms]
+           [Clear CT: 0.0 ms]
+           [Other: 0.1 ms]
+              [Choose CSet: 0.0 ms]
+              [Ref Proc: 0.1 ms]
+              [Ref Enq: 0.0 ms]
+              [Redirty Cards: 0.0 ms]
+              [Humongous Register: 0.0 ms]
+              [Humongous Reclaim: 0.0 ms]
+              [Free CSet: 0.0 ms]
+           [Eden: 1024.0K(3072.0K)->0.0B(3072.0K) Survivors: 1024.0K->1024.0K Heap: 3957.6K(10.0M)->2051.9K(10.0M)]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [GC concurrent-mark-end, 0.0012521 secs]
+        [GC remark [Finalize Marking, 0.0000615 secs] [GC ref-proc, 0.0000362 secs] [Unloading, 0.0004784 secs], 0.0006381 secs]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [GC cleanup 3393K->3393K(10M), 0.0001072 secs]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [GC pause (G1 Humongous Allocation) (young), 0.0008076 secs]
+           [Parallel Time: 0.6 ms, GC Workers: 4]
+              [GC Worker Start (ms): Min: 163.7, Avg: 163.8, Max: 163.9, Diff: 0.2]
+              [Ext Root Scanning (ms): Min: 0.0, Avg: 0.1, Max: 0.2, Diff: 0.2, Sum: 0.5]
+              [Update RS (ms): Min: 0.0, Avg: 0.2, Max: 0.4, Diff: 0.4, Sum: 0.8]
+                 [Processed Buffers: Min: 0, Avg: 0.5, Max: 1, Diff: 1, Sum: 2]
+              [Scan RS (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Code Root Scanning (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Object Copy (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [Termination (ms): Min: 0.0, Avg: 0.2, Max: 0.4, Diff: 0.4, Sum: 0.8]
+                 [Termination Attempts: Min: 1, Avg: 1.0, Max: 1, Diff: 0, Sum: 4]
+              [GC Worker Other (ms): Min: 0.0, Avg: 0.0, Max: 0.0, Diff: 0.0, Sum: 0.0]
+              [GC Worker Total (ms): Min: 0.4, Avg: 0.5, Max: 0.6, Diff: 0.2, Sum: 2.1]
+              [GC Worker End (ms): Min: 164.3, Avg: 164.3, Max: 164.3, Diff: 0.0]
+           [Code Root Fixup: 0.0 ms]
+           [Code Root Purge: 0.0 ms]
+           [Clear CT: 0.0 ms]
+           [Other: 0.2 ms]
+              [Choose CSet: 0.0 ms]
+              [Ref Proc: 0.1 ms]
+              [Ref Enq: 0.0 ms]
+              [Redirty Cards: 0.0 ms]
+              [Humongous Register: 0.0 ms]
+              [Humongous Reclaim: 0.0 ms]
+              [Free CSet: 0.0 ms]
+           [Eden: 1024.0K(3072.0K)->0.0B(2048.0K) Survivors: 1024.0K->0.0B Heap: 6014.9K(10.0M)->4553.0K(10.0M)]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [Full GC (Allocation Failure)  4553K->4461K(10M), 0.0027711 secs]
+           [Eden: 0.0B(2048.0K)->0.0B(2048.0K) Survivors: 0.0B->0.0B Heap: 4553.0K(10.0M)->4461.0K(10.0M)], [Metaspace: 3215K->3215K(1056768K)]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        [Full GC (Allocation Failure)  4461K->4442K(10M), 0.0020325 secs]
+           [Eden: 0.0B(2048.0K)->0.0B(2048.0K) Survivors: 0.0B->0.0B Heap: 4461.0K(10.0M)->4442.9K(10.0M)], [Metaspace: 3215K->3215K(1056768K)]
+         [Times: user=0.00 sys=0.00, real=0.00 secs] 
+        Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+        	at java.util.Arrays.copyOfRange(Arrays.java:3664)
+        	at java.lang.String.<init>(String.java:207)
+        	at java.lang.StringBuilder.toString(StringBuilder.java:407)
+        	at A20200814_bili第二季.code.A101_G1.exam1(A101_G1.java:26)
+        	at A20200814_bili第二季.code.A101_G1.main(A101_G1.java:18)
+        Heap
+         garbage-first heap   total 10240K, used 4442K [0x00000000ff600000, 0x00000000ff700050, 0x0000000100000000)
+          region size 1024K, 1 young (1024K), 0 survivors (0K)
+         Metaspace       used 3247K, capacity 4496K, committed 4864K, reserved 1056768K
+          class space    used 351K, capacity 388K, committed 512K, reserved 1048576K
+        Heap变成了两层：
+            garbage-first heap  -G1区
+            Metaspace           -元数据区
+    11.
+    
+    
 ## 102 GC-G1底层原理
+    
+    1.见图
+    
 ## 103 GC-G1参数配置及CMS的比较
+
+    1.常用参数配置：
+        -XX:+UseG1GC
+        -XX:G1HeapRegionSize=n 设置G1的region大小，值是2的幂，范围1M-32M，目标是根据最小的java堆大小划分出约2048个区域，大概最多有64G
+        -XX:MaxGCPauseMills=n  最大GC停顿时间，这是个软目标，jvm将尽可能（但不保证）停顿小于这个时间 
+        -XX:InitiatingHeapOccupancyPercent=n    堆占用了多少的时候就触发GC，默认为45
+        -XX:ConcGCThreads=n 并发gc使用的线程数
+        -XX:G1ReservePercent=n  设置作为空闲空间的预留内存百分比，以降低目标空间移除的风险，默认为10%
+    2.G1的生产建议配置：
+        -XX:+UseG1GC -Xms32g -XX:MaxGCPauseMills=100
+    3.目前常用的还是：CMS，新技术暂不敢用，可以尝试使用
+    
 ## 104 JVM-GC结合SpringBoot微服务优化简介
+    
+    1.调优过程：
+        1.idea开发完代码
+        2.maven进行clean package打成war包或者jar包
+        3.要求为服务启动的时候，同时配置JVM/GC的调优参数
+            3.1 内 - 指在idea开发工具中配置 VM Option
+            3.2 外 - war包或者jar包的启动【重点】
+        4.公式：
+            java -server 【jvm的各种参数】 -jar 【xxx.jar/xxx.war】        
+            示例：
+                java -server -Xms1024m -Xmx1024m -XX:+UseG1GC -jar seckill.jar
+                jps -l
+                jinfo -flags 进程号
+        5.Undertow服务器替换tomcat，每秒的QPS比tomcat高出1-3K
+    
 ## 105 linux命令-top
+
+    1.生产服务器变慢了，诊断思路和性能评估？
+        整机：     top
+        CPU:       vmstat 
+        内存：     free
+        硬盘：     df
+        磁盘io：   iostat
+        网络io：   ifstat
+    2.top
+        主要看的是：
+            %CPU
+            %MEM
+            load average
+        看核数：
+            按【1】
+            看%cpu的个数
+        [root@VM_0_4_centos ~]# top
+            【load average：系统负载，三个值平均代表系统1分钟，5分钟，15分钟系统的平均负载，如果三个值相加除以3 若高于60%，则系统的负载压力重】
+            top - 19:29:32 up 66 days,  5:11,  1 user,  load average: 0.02, 0.03, 0.05
+            Tasks: 120 total,   1 running, 119 sleeping,   0 stopped,   0 zombie
+            %Cpu(s):  1.2 us,  1.2 sy,  0.0 ni, 97.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st【按1之前】
+            KiB Mem :  3880316 total,   188604 free,  1057012 used,  2634700 buff/cache
+            KiB Swap:        0 total,        0 free,        0 used.  2534972 avail Mem 
+            
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                   
+            22248 root      20   0  611616  13752   2220 S   1.7  0.4 153:51.50 barad_agent 
+        在top命令执行的情况下，按【1】可见
+            top - 19:35:38 up 64 days,  9:15,  1 user,  load average: 0.00, 0.01, 0.05
+            Tasks: 110 total,   1 running, 109 sleeping,   0 stopped,   0 zombie
+            %Cpu0  :  1.0 us,  1.0 sy,  0.0 ni, 98.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st【按1之后】可知只有cpu0和cpu1表示 此服务器为2核
+            %Cpu1  :  0.7 us,  1.0 sy,  0.0 ni, 98.3 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st【按1之后】可知只有cpu0和cpu1表示 此服务器为2核
+            KiB Mem :  3880316 total,   133532 free,  2461928 used,  1284856 buff/cache
+            KiB Swap:        0 total,        0 free,        0 used.  1130052 avail Mem 
+    3.uptime：- 查看负载
+        [root@VM_0_4_centos ~]# uptime
+         19:39:50 up 66 days,  5:21,  1 user,  load average: 1.18, 0.33, 0.14 
+         【第一个插过0.6过多，第二个低，第三个低，某段时间高负载】
+
 ## 106 linux命令-cpu查看vmstat
+    
+    1.vmstat -n 2 3  【每两秒采样一次，一共采样三次】
+        [root@VM_0_4_centos ~]#  vmstat -n 2 3
+        procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+         r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+         1  0      0 192228 187744 2447692    0    0     2    17    1    2  1  1 97  0  0
+         0  0      0 192272 187744 2447692    0    0     0    36  426  875  1  1 98  0  0
+         1  0      0 191416 187744 2447692    0    0     0     0  507  773  1  1 98  0  0
+        vmstat 是通过两个参数来完成的，第一个参数是采样的时间间隔数，单位为秒，第二个参数是采样的次数
+        -procs
+            r表示运行runtime
+                运行和等待cpu时间片的进程数，原则上1核的cpu的运行队列不要超过2，整个系统的运行队列不能超过总核数的两倍，否则代表系统压力过大
+            b表示阻塞block
+                等待资源的进程数，比如正在等待磁盘IO，网络IO等
+        -cpu：
+            ·us 用户进程消耗cpu时间百分比，us值高，用户进程消耗cpu时间多，如果长期大于50%，优化程序
+            ·sy 内核进程消耗的cpu时间百分比
+            ·us + sy: 参考值为80%，如果大于80%，可能cpu不足
+            ·id 处于空闲的cpu百分比
+            ·wa 系统等待io的cpu时间百分比
+            ·st 来自于一个虚拟机偷取的cpu时间的百分比
+            
 ## 107 linux命令-cpu查看pidstat
+
+    1.查看所有cpu核信息：-更详细
+        mpstat -P ALL 2 每隔两秒采样一次
+    2.每个进程使用cpu的用量分解信息
+        ps -ef |grep java
+        pidstat -u 1 -p 进程编号 1代表每秒采样一次
+    3.安装pidstat以及mpstat及iostat：
+        pidstat和mpstat和iostat 是sysstat软件套件的一部分，sysstat包含很多监控linux系统状态的工具，它能够从大多数linux发行版的软件源中获得。
+        在Debian/Ubuntu系统中可以使用下面的命令来安装
+        　　# apt-get install sysstat
+        CentOS/Fedora/RHEL版本的linux中则使用下面的命令：
+        　　# yum install sysstat
+        使用：
+            [root@VM_0_4_centos ~]# ps -ef|grep java
+                root     20181     1  0 Jul31 ?        01:17:26 java -jar api.jar --server.port=8080
+            [root@VM_0_4_centos ~]# pidstat -u 1 -p 20181
+                Linux 3.10.0-1127.8.2.el7.x86_64 (VM_0_4_centos) 	09/04/2020 	_x86_64_	(2 CPU)
+                08:13:15 PM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+                08:13:16 PM     0     20181    0.00    0.00    0.00    0.00     0  java
+                08:13:17 PM     0     20181    0.00    1.00    0.00    1.00     0  java
+            PID - 被监控的任务的进程号
+            %usr - 当在用户层执行（应用程序）时这个任务的cpu使用率，和 nice 优先级无关。注意这个字段计算的cpu时间不包括在虚拟处理器中花去的时间
+        　　%system - 这个任务在系统层使用时的cpu使用率。
+            %guest - 任务花费在虚拟机上的cpu使用率（运行在虚拟处理器）
+        　　%CPU - 任务总的cpu使用率。在SMP环境（多处理器）中，如果在命令行中输入-I参数的话，cpu使用率会除以你的cpu数量。
+            CPU - 正在运行这个任务的处理器编号。
+        　　Command - 这个任务的命令名称
+        其他命令：
+            1.pidstat -d -p 8472  【通过使用-d参数来得到I/O的统计数据】
+                IO 输出会显示一些内的条目：
+                    kB_rd/s - 任务从硬盘上的读取速度（kb）
+                    kB_wr/s - 任务向硬盘中的写入速度（kb）
+                    kB_ccwr/s - 任务写入磁盘被取消的速率（kb）    
+            2.pidstat -d -p 8472 【使用-r标记你能够得到内存使用情况的数据】
+                重要的条目：
+                　　minflt/s - 从内存中加载数据时每秒出现的小的错误的数目，这些不要求从磁盘载入内存页面。
+                　　majflt/s - 从内存中加载数据时每秒出现的较大错误的数目，这些要求从磁盘载入内存页面。
+                　　VSZ - 虚拟容量：整个进程的虚拟内存使用（kb）
+                　　RSS - 长期内存使用：任务的不可交换物理内存的使用量（kb）
+            3.常用：
+                1. 你可以通过使用下面的命令来监测内存使用,这会给你5份关于page faults的统计数据结果，间隔2秒。这将会更容易的定位出现问题的进程。
+                　　# pidstat -r 2 5 
+                2. 显示所有mysql服务器的子进程
+                　　# pidstat -T CHILD -C mysql
+                3. 将所有的统计数据结合到一个便于阅读的单一报告中：
+                　　# pidstat -urd -h
+                
 ## 108 linux命令-内存查看free和pidstat
 ## 109 linux命令-硬盘查看df
 ## 110 linux命令-磁盘io查看iostat，pidstat

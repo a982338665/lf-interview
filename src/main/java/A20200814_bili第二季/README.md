@@ -1522,16 +1522,241 @@
                 　　# pidstat -urd -h
                 
 ## 108 linux命令-内存查看free和pidstat
+
+    1.内存查看
+        free        按单位字节展示
+        free -g     按单位G展示
+        free -m     按单位兆（m）展示
+            [root@VM_0_4_centos ~]# free -m
+                          total        used        free      shared  buff/cache   available
+            Mem:           3789        1027         224           1        2537        2480
+            Swap:             0           0           0
+        经验值：
+            应用程序可用内存/系统物理内存>70% 内存充足
+            应用程序可用内存/系统物理内存<20% 内存不足，需要增加内存
+            介于中间表示基本够用
+    2.查看进程所占内存：
+        pidstat -p 进程号 -r 采样间隔秒数
+                
 ## 109 linux命令-硬盘查看df
-## 110 linux命令-磁盘io查看iostat，pidstat
-## 111 linux命令-网络io查看ifstat
-## 112 cpu占用过高的定位分析思路
-## 113 github-开启
-## 114 github-常用词
-## 115 github-in限制搜索
-## 116 github-star和fork范围搜索
-## 117 github-awesome搜索
-## 118 github-#L数字
-## 119 github-T搜索
-## 120 github-搜索区域活跃用户
+
+    0.查看磁盘剩余空间数
+    1.df
+    2.df -h 【-h表示用人眼可见的数字展示】
     
+## 110 linux命令-磁盘io查看iostat，pidstat
+
+    1.磁盘IO性能评估：网络系统慢，一般不是cpu慢就是磁盘io慢，mysql大表存储时就会大量占用磁盘io
+    2.命令 iostat
+        iostat -xdk 2 3     2秒一次一共三次
+        [root@VM_0_4_centos ~]# iostat -xdk 2 3
+        Linux 3.10.0-1127.8.2.el7.x86_64 (VM_0_4_centos) 	09/05/2020 	_x86_64_	(2 CPU)
+        Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+        vda               0.00     3.49    0.14    3.78     3.06    33.06    18.44     0.02    7.00    4.85    7.08   0.48   0.19
+            rKB/s每秒读取数据Kb
+            wKB/s每秒写入数据Kb
+            svctm IO请求的平均服务时间，单位毫秒
+            await IO请求的平均等待时间，单位毫秒，值越小，性能越好
+            util  一秒中有百分之几的时间用于IO操作。接近100%时，表示磁盘带宽跑满，需要优化程序或者增加磁盘
+    3.命令 pidstat 查看进程所占IO
+        pidstat -d 采样间隔秒数 -p 进程号
+        
+## 111 linux命令-网络io查看ifstat
+
+    1.网络io：ifstat，如果没有，默认要下载
+        wget http://gael.roualland.free.fr/ifstat/ifstat-1.1.tar.gz
+        tar zxvf ifstat-1.1.tar.gz
+        cd ifstat-1.1
+        ./configure
+        make
+        make install
+    2.观察各个网卡的in ，out
+        观察网络负载情况
+        程度网络读写是否正常
+        程序网络IO优化
+        增加网络IO带宽
+    3.命令：
+        ifstat l
+        ifstat
+    
+## 112 cpu占用过高的定位分析思路
+
+    1.结合linux和jdk命令一块分析
+    2.分析步骤：
+        1.先用top命令找出cpu占用最高的程序
+            top -S 以累积模式显示程序信息
+            根据以上命令能获取到Pid
+        2.ps -ef 或者jps进一步定位到具体程序
+            jps -l
+            或者
+            ps -ef|grep java|grep -v grep
+                ps -ef|grep cpu会把grep cpu的进程也统计进来，因此用ps -ef|grep cpu|grep -v grep去除grep进程
+        3.定位到具体线程或者代码
+            ps -mp 进程号 -o THREAD,tid,time
+                [root@VM_0_4_centos ~]# ps -mp 7690 -o THREAD,tid,time
+                USER     %CPU PRI SCNT WCHAN  USER SYSTEM   TID     TIME
+                polkitd   0.6   -    - -         -      -     - 09:59:45
+                polkitd   0.0  19    - poll_s    -      -  7690 00:00:00
+            -m 显示所有的线程
+            -p pid进程使用的cpu的时间
+            -o 该参数后是用户自定义格式     
+        4.将需要的线程id转换为16进制格式（英文小写格式）
+            命令：printf "%x\n" 有问题的线程id
+            直接换算：电脑计算机中输入后 ，点击Rsh ，可在左上角看到 HEX 的值即为对应16进制
+        5.jstack 进程id| grep tid(16进制线程id小写英文) -A60（打印出前60行）
+    3.实例测试：
+        [root@VM_0_4_centos ~]# top -S
+              PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                   
+            20181 root      20   0 3564196 508064   7096 S   0.3 13.1  78:41.99 java   
+        [root@VM_0_4_centos ~]# jps -l
+            20181 api.jar
+            28021 sun.tools.jps.Jps
+        [root@VM_0_4_centos ~]# ps -mp 20181 -o THREAD,tid,time
+            USER     %CPU PRI SCNT WCHAN  USER SYSTEM   TID     TIME
+            root      0.0  19    - futex_    -      - 22113 00:00:00
+            root      0.0  19    - futex_    -      - 22114 00:00:00
+        [root@VM_0_4_centos ~]# printf "%x\n" 22113
+            5661
+        [root@VM_0_4_centos ~]# jstack 20181| grep 5661 -A60    【从进程20181的程序中，找到某线程问题..在以下内容中找出属于本项目包内的问题，定位到行】
+            "http-nio-8080-exec-13" #44 daemon prio=5 os_prio=0 tid=0x00007fdcd0005000 nid=0x5661 waiting on condition [0x00007fdcd462d000]
+               java.lang.Thread.State: WAITING (parking)
+                at sun.misc.Unsafe.park(Native Method)
+                - parking to wait for  <0x00000000c7f34af0> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+                at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+                at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+                at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+                at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:103)
+                at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:31)
+                at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)
+                at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+                at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+                at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+                at java.lang.Thread.run(Thread.java:748)
+    4.内存过高定位：
+        1.定位进程
+            通过top -c（然后按Shift+M按内存排序），或者htop等工具定位到具体的高内存进程。假设定位到的进程ID为14279。
+        2.定位线程
+            2.1 通过top查看线程
+                top -H -p 14279（然后按Shift+M按内存排序）定位占内存的线程：
+            2.2 通过ps统计下当前进程的线程数
+                ps p 14279 -L -o pcpu,pmem,pid,tid,time,tname,cmd |wc -l
+        3.初步判断
+            通过以上二步确认是否线程开多了，还是单个线程内存占用过多导致。
+            如果是线程过多，那么就要去排查具体原因。是服务器线程，还是业务代码中的多线程导致？
+            如果是单线程内存占用，那么就要dump快照或者本地尝试模拟重现
+        4.Java提供了一个很好的内存监控工具：jmap命令
+            jmap [pid]
+            jmap -histo:live [pid] >a.log
+            jmap -dump:live,format=b,file=xxx.xxx [pid]
+             用得最多是后面两个。其中，jmap -histo:live [pid] 可以查看当前Java进程创建的活跃对象数目和占用内存大小。
+             jmap -dump:live,format=b,file=xxx.xxx [pid] 则可以将当前Java进程的内存占用情况导出来，方便用专门的内存分析工具（例如：MAT）来分析。这个命令对于分析是否有内存泄漏很有帮助
+            命令：
+               jmap -histo:live 14279 |head -n 100
+       5.jmap内存快照：
+            如果是线上环境，注意dump之前必须先将流量切走，否则大内存dump是直接卡死服务。
+            # dump当前快照
+                jmap -dump:live,format=b,file=dump.hprof <pid>
+                # 触发full gc，然后再dump一次
+                jmap -dump:live,format=b,file=dump_gc.hprof <pid>
+                dump:live的作用是会触发Full GC，然后再dump数据，用作gc前后的数据做对比。
+       6.上传到fastthread.io分析
+             如果快照文件不大，也可以上传到https://fastthread.io/分析。
+       7.通过jhat分析
+             如果快照文件很大，可以在服务器上直接分析：
+                 faceless@ttg12:~/tmp$ jhat dump.hprof
+                 Reading from dump.hprof...
+                 Dump file created Mon Jun 22 14:33:00 CST 2020
+                 Snapshot read, resolving...
+                 Resolving 36246 objects...
+                 Chasing references, expect 7 dots.......
+                 Eliminating duplicate references.......
+                 Snapshot resolved.
+                 Started HTTP server on port 7000
+                 Server is ready.
+             分析完成后，访问http://ttg12:7000，如下图：    
+       8.监视垃圾回收次数，时间
+            jstat -gcutil 进程号
+            jstat -gcutil 20181 3000 10 【监控进程20181，每间隔3秒，记录一次，共计10次】
+                [root@VM_0_4_centos ~]# jstat -gcutil 20181
+                  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT   
+                  0.00   0.00   1.28  26.50  97.08  94.64     58    0.584     6    0.987    1.571
+                [root@VM_0_4_centos ~]# jstat -gcutil 20181 3000 10
+                  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT   
+                  0.00   0.00   1.28  26.50  97.08  94.64     58    0.584     6    0.987    1.571
+                    S0: 幸存区0
+                    S1: 幸存区1
+                    E：年轻代
+                    O：年老代
+                    M：持久代
+                        （以上都是已使用所占百分比）
+                    YGC ： 年轻代YGC的次数
+                    YGCT ：年轻代YGC所消耗的时间
+                    FGC ： 年老代full GC的次数
+                    FGCT ：年老代full GC所消耗的时间
+                    GCT : 用于GC所消耗的总时间
+    5.内存过高查询：
+        jmap -heap 20181       
+    6.一般出故障了，怎么调试+排查+检索：内存快照+MIT分析等
+            
+## 113 github-开启
+
+    1.github上优秀的框架+源码，提升自己
+
+## 114 github-常用词
+
+    1.面试题
+    2.寻找优秀源码+框架深度解读+学习代码+贡献
+    
+## 115 github-in限制搜索
+    
+    1.例如搜索秒杀的代码学习
+    2.in限制搜索：-> 阿里对这部分使用考察较多
+        公式1：
+            关键字 in:name或description或readme 
+            seckill in:name         名称包含seckill的项目
+            seckill in:description  描述包含seckill的项目
+            seckill in:readme       自述文件包含seckill的项目
+            seckill in:name,readme  名称和自述文件都包含seckill的项目【组合使用】
+       
+## 116 github-star和fork范围搜索
+    
+    1.公式1：
+        关键词 stars 通配符 【:> 或者 :>=】
+    2.公式2：
+        区间范围数字 【数字1..数字2】
+    3.查找stars数大于等于5000的springboot项目
+        springboot stars:>=5000
+    4.查找fork数大于500的springcloud项目
+        springcloud forks:>500
+    5.查找fork在100-200之间并且star数在80-100之间的springboot项目
+        springboot stars:80..100 forks:100..200
+    
+## 117 github-awesome搜索
+
+    1.公式：
+        awesome 关键字 【此查询一般用来收集学习，工具，书籍类相关项目，awesome-令人敬畏】
+
+## 118 github-#L数字
+    
+    1.高亮显示某行代码：告诉别人代码的具体位置
+    2.例如：
+        逃逸分析示例代码：
+        https://github.com/a982338665/lf-interview/blob/master/src/main/java/A20200807_bili%E7%AC%AC%E4%B8%80%E5%AD%A3/Test24.java
+        告诉别人的时候：地址+#L第几行  即表示定位到文件第七行
+        https://github.com/a982338665/lf-interview/blob/master/src/main/java/A20200807_bili%E7%AC%AC%E4%B8%80%E5%AD%A3/Test24.java#L7
+        高亮显示第7到第18行
+        https://github.com/a982338665/lf-interview/blob/master/src/main/java/A20200807_bili%E7%AC%AC%E4%B8%80%E5%AD%A3/Test24.java#L7-L18
+    
+## 119 github-T搜索
+
+    1，点击进入仓库后，按键t，然后就能够全局搜索
+    
+## 120 github-搜索区域活跃用户
+
+    1.公式：
+        location:地区
+        language:语言
+    2.北京地区java用户
+        location:beijing language:java
+    
+  

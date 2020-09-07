@@ -1,11 +1,22 @@
-package A20200311_spring.beanutiltest;
+package A20200311_spring.A2beanutiltest;
 
 import java.util.Date;
 
-public class PersonDTO {
+public class PersonDO {
+    private Integer id;
     private String name;
     private Integer age;
     private Date birthday;
+    //省略setter/getter
+
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;

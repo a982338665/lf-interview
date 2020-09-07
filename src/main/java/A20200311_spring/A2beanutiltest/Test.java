@@ -1,4 +1,4 @@
-package A20200311_spring.beanutiltest;
+package A20200311_spring.A2beanutiltest;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;

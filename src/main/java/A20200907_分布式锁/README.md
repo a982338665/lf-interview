@@ -1,4 +1,4 @@
-# 参加博客
+# 参见博客
 >https://blog.csdn.net/wuzhiwei549/article/details/80692278
 
 # 历程
@@ -59,8 +59,14 @@
          4、非重入的？在数据库表中加个字段，记录当前获得锁的机器的主机信息和线程信息，那么下次再获取锁的时候先查询数据库，如果当前机器的主机信息和线程信息在数据库可以查到的话，
             直接把锁分配给他就可以了。
     
-## 2.基于redis
+## 2.基于redis https://segmentfault.com/a/1190000012919740
 
+    原理命令：
+        SETNX key value ：将 key 的值设为 value ，当且仅当 key 不存在。若给定的 key 已经存在，则 SETNX 不做任何动作。
+        SETNX 是『SET if Not eXists』(如果不存在，则 SET)的简写。
+            返回值：
+            设置成功，返回 1 。
+            设置失败，返回 0 。
     获取锁使用命令:
         SET resource_name my_random_value NX PX 30000
     try{
@@ -146,5 +152,5 @@
     从可靠性角度（从高到低）
         Zookeeper > 缓存 > 数据库
                             
-      
+##     
         

@@ -1,4 +1,7 @@
 
+后面带 - 线解释的为诸葛老师讲的
+
+
  一、JVM指令助记符
 
 1)操作数栈
@@ -78,10 +81,10 @@
      0x17 fload     将指定的float型本地变量推送至栈顶  
      0x18 dload     将指定的double型本地变量推送至栈顶  
      0x19 aload     将指定的引用类型本地变量推送至栈顶  
-     0x1a iload_0    将第一个int型本地变量推送至栈顶  
-     0x1b iload_1    将第二个int型本地变量推送至栈顶  
-     0x1c iload_2    将第三个int型本地变量推送至栈顶  
-     0x1d iload_3    将第四个int型本地变量推送至栈顶  
+     0x1a iload_0    将第一个int型本地变量推送至栈顶 - 从局部变量0中装载int类型值 放进操作数栈
+     0x1b iload_1    将第二个int型本地变量推送至栈顶 -  从局部变量1中装载int类型值  放进操作数栈
+     0x1c iload_2    将第三个int型本地变量推送至栈顶 -  从局部变量2中装载int类型值   放进操作数栈
+     0x1d iload_3    将第四个int型本地变量推送至栈顶   -  从局部变量3中装载int类型值 放进操作数栈
      0x1e lload_0    将第一个long型本地变量推送至栈顶  
      0x1f lload_1    将第二个long型本地变量推送至栈顶  
      0x20 lload_2    将第三个long型本地变量推送至栈顶  
@@ -111,10 +114,10 @@
      0x38 fstore    将栈顶float型数值存入指定本地变量  
      0x39 dstore    将栈顶double型数值存入指定本地变量  
      0x3a astore    将栈顶引用型数值存入指定本地变量  
-     0x3b istore_0   将栈顶int型数值存入第一个本地变量  
-     0x3c istore_1   将栈顶int型数值存入第二个本地变量  
-     0x3d istore_2   将栈顶int型数值存入第三个本地变量  
-     0x3e istore_3   将栈顶int型数值存入第四个本地变量  
+     0x3b istore_0   将栈顶int型数值存入第一个本地变量-局部变量0
+     0x3c istore_1   将栈顶int型数值存入第二个本地变量-局部变量1  
+     0x3d istore_2   将栈顶int型数值存入第三个本地变量-局部变量2  
+     0x3e istore_3   将栈顶int型数值存入第四个本地变量-局部变量3
      0x3f lstore_0   将栈顶long型数值存入第一个本地变量  
      0x40 lstore_1   将栈顶long型数值存入第二个本地变量  
      0x41 lstore_2   将栈顶long型数值存入第三个本地变量  

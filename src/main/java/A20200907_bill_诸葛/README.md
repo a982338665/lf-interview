@@ -363,3 +363,115 @@
             ·数据存储内存，表结构存储磁盘，访问效率高
             ·服务关闭，表中数据丢失
             ·mysql应用场景：内存表做数据缓存
+
+## 21 redis的五种数据结构讲解
+    
+    看图：string，hash ，list，set ，zset
+    
+## 22 string结构与应用详解
+
+    字符串常用操作：
+        set key val                 存入字符串键值对
+        mset key val [key val ...]  批量存储字符串键值对
+        setnx key val               存入一个不存在的字符串键值对
+        get key                     获取字符串键值
+        mget key [key ...]          批量获取字符串键值
+        del key [key ...]           删除一个键
+        expire key seconds          给key设置过期时间（秒）
+    原子操作
+        incr key                    将key中存储的数字的值加一
+        decr key                    将key中存储的数字的值减一
+        incrby key increment        将key中存储的数字的值加上increment
+        decrby key decrement        将key中存储的数字的值减去decrement
+    应用场景：
+        1.单值缓存
+            命令：
+                set key val
+                get key
+            场景：
+                商品库存放在redis中，解决下单减库存高并发
+        2.对象缓存
+            命令：
+                1. set user:1 val(json数据格式)
+                2. mset user:1:name li user:1:age 18 user:1:sex 男
+                   mget user:1:name user:1:age
+            场景：
+                存储用户session的信息：
+                    第一种方式：set 用户id（key） 用户信息json（val）
+                    第二种方式：mset存储
+                    两种方式区别：
+                        第二种方式可以修改指定字段，例如用户数据中的余额字段会被频繁更新，而其他的不需要，所以使用此种方式的好处就在这里 
+        3.分布式锁
+            命令：
+                setnx不允许key重复
+                setnx product:10001 true    //返回1代表获取锁成功
+                setnx product:10001 false   //获取锁失败
+                ...执行业务操作
+                del product:10001           //执行完业务释放锁
+                set product:10001 true ex 10 nx     //防止程序意外终止导致死锁
+            场景：
+                下单，秒杀，在分布式系统中 就需要做分布式锁
+                在高并发情况下减库存，可能会造成超卖问题
+        4.计数器
+            命令：
+                incr article:readcount:{文章id}
+                get article:readcount:{文章id}
+            场景：
+                某些微博或者帖子下的阅读数等
+        5.web集群session共享
+            string session + redis实现session共享
+        6.分布式系统全局序列号
+            incrby orderid 1000 //redis批量生产序列号提升性能，每次取1000个id存到内存，在程序中计算，当id耗尽的时候重新去redis获取序列号
+                //若是redis挂了id丢失不用处理
+                  
+## 23 hash结构与应用场景讲解
+    
+    等同于一个双层map
+    key val 【val 又是一个 key val】
+    help @hash -> 查看hash命令结构帮助
+    查看redis的命令手册
+    hash常用操作：
+        hset key field value   存储一个hash表key的键值
+        hsetnx key field value 存储一个不存在hash表key的键值
+        hmset key field value [field value ...] 在一个hash表key中存储多个键值对
+        hget key field                      获取hash表key对应的field键值
+        hmget key field [field ...]         获取hash表key对应的field键值
+        hdel key field [field ...]          删除hash表key对应的field键值
+        hlen key                            返回hash表key中field的数量
+        hgetall key                         返回hash表中key的所有值
+        hincrby key field increment         为hash表key中field的值加上增量increment
+    应用场景：
+        1.对象缓存-用hash更合适
+            hmset user {userid}:name lisheng {userid}:age 18 
+            hmset user 1:name lisheng 1:age 18 --> 这样存储数据量很大时，不允许直接返回hash表中key的所有值  hgetall key 
+                例如 user表存储 1000万条用户信息，该怎么优化？？ -> 分片存储-一种优化思想
+                    再同一个redis中，可以将user表按一定规则分开，分段存储，例如 id取模==0 存储在user-1，id取模==1存储在user-2，等同于分表存储
+                    再不同redis中，分片存储
+            hmget user 1:name 1:age -->取数据
+            一般而言缓存中只放些热点数据，对于对象缓存中数据量过大的该怎么存储？？几千几百万条数据该怎么存储，优化？
+            分片存储，将业务数据按照业务规则区分，存储在不同的redis中，类似于同表不同库
+            1.例如可以根据 key取模，将其存储在不同的redis
+            2.例如可以按照 用户所在不同省份去区分，将其存储在不同的redis
+        2.电商购物车
+            1.以用户id为key
+            2.商品id为field
+            3.商品数量为value
+          购物车操作：
+            1.添加商品：hset cart:1001 1088 1
+            2.增加数量：hincrby cart:1001 1088 1
+            3.商品数量：hlen cart:1001
+            4.删除商品：hdel cart:1001 1088
+            5.获取购物车所有商品：hgetall cart:1001
+    优缺点：
+        优点：
+            同类数据归类整合存储，方便数据管理
+            相比string操作消耗内存及cpu更小
+            相比string存储更节省空间
+        缺点：
+            过期功能不能使用在field上，只能用在key
+            redis集群架构下不适合大规模使用？
+                分片存储时，一个key可能会有很大的数据量，hashkey都落在一个节点上，可能会导致数据倾斜
+                跟集群思想相违背，将多个hashkey让他尽量落在不同节点上
+        
+## 24 list结构与应用场景讲解
+## 25 set结构与应用场景讲解

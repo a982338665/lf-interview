@@ -106,11 +106,11 @@
                         }
                     }
                     访问权限表：
-                    修饰符	同一个类中	同一个包中	子类	不同包中
-                    public	Yes	Yes	Yes	Yes
+                    修饰符	    同一个类中	同一个包中	子类	不同包中
+                    public	    Yes	Yes	Yes	Yes
                     protected	Yes	Yes	Yes	
-                    default	Yes	Yes		
-                    private	Yes			
+                    default	    Yes	Yes		
+                    private	    Yes			
                 4.private修饰不支持继承，所以无法重写private修饰的方法。static修饰的方法也不能被重写。虽然在子类中可以存在与父类中private方法和static方法相同名称的方法，
                     但是并不存在多态，所以并不是重写。
                     示例代码：

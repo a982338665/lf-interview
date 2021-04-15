@@ -98,7 +98,7 @@
                         server.port=8899
                         
                         #tx-manager不得修改
-                        spring.application.name=tx-manager
+                        spring.application.name=tx-manager·
                         
                         spring.mvc.static-path-pattern=/**
                         spring.resources.static-locations=classpath:/static/
